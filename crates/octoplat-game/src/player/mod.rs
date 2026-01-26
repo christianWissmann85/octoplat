@@ -254,9 +254,33 @@ impl Player {
         self.position.x += self.velocity.x * dt;
         self.resolve_horizontal_collision(&nearby_tiles, config);
 
-        self.position.y += self.velocity.y * dt;
-        self.resolve_vertical_collision(&nearby_tiles, config);
-        self.resolve_oneway_collision(&oneway_tiles);
+        // Sub-step vertical movement to prevent tunneling at high velocities
+        // Max safe step is half tile height (16 pixels) to ensure we always overlap
+        const MAX_VERTICAL_STEP: f32 = 16.0;
+        let total_vertical_move = self.velocity.y * dt;
+        let abs_move = total_vertical_move.abs();
+
+        if abs_move <= MAX_VERTICAL_STEP {
+            // Small movement - single step is fine
+            self.position.y += total_vertical_move;
+            self.resolve_vertical_collision(&nearby_tiles, config);
+            self.resolve_oneway_collision(&oneway_tiles);
+        } else {
+            // Large movement - sub-step to prevent tunneling
+            let num_steps = (abs_move / MAX_VERTICAL_STEP).ceil() as usize;
+            let step_move = total_vertical_move / num_steps as f32;
+
+            for _ in 0..num_steps {
+                self.position.y += step_move;
+                self.resolve_vertical_collision(&nearby_tiles, config);
+                self.resolve_oneway_collision(&oneway_tiles);
+
+                // If collision zeroed our velocity, stop sub-stepping
+                if self.velocity.y == 0.0 {
+                    break;
+                }
+            }
+        }
 
         // === 9. Check Bounce Pads ===
         self.check_bounce_pads(&bounce_tiles, config);

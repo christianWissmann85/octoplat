@@ -38,6 +38,10 @@ impl Player {
 
                 self.position.x += collision.normal.x * collision.penetration;
                 self.velocity.x = 0.0;
+
+                // Only resolve one horizontal collision per frame to prevent double-pushing
+                // when player straddles adjacent tiles at a boundary
+                break;
             }
         }
     }
@@ -85,6 +89,10 @@ impl Player {
                     pre_pos.x, pre_pos.y, self.position.x, self.position.y,
                     pre_vel.y, self.velocity.y
                 );
+
+                // Only resolve one vertical collision per frame to prevent double-pushing
+                // when player straddles adjacent tiles at a boundary
+                break;
             }
         }
     }
