@@ -574,10 +574,11 @@ impl ProcgenManager {
         }
 
         // Fall back to linked segments (more variety, larger levels)
+        // Scale segment count with level progression for longer, more interesting levels
         let segment_count = match preset {
-            DifficultyPreset::Casual => 2,
-            DifficultyPreset::Standard => 3,
-            DifficultyPreset::Challenge => 4,
+            DifficultyPreset::Casual => 6 + (level_index as usize / 3).min(6),      // 6-12
+            DifficultyPreset::Standard => 10 + (level_index as usize / 2).min(10),  // 10-20
+            DifficultyPreset::Challenge => 14 + (level_index as usize).min(10),     // 14-24
         };
 
         self.generate_linked_level_with_retry(biome, preset, level_index, seed, segment_count)
