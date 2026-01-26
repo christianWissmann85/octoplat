@@ -1,0 +1,50 @@
+{
+  "character": {
+    "name": "octopus_hero",
+    "description": "cute purple octopus protagonist with big expressive eyes, wearing a red bandana, 8 tentacles, friendly smile, cartoon style",
+    "style": "cartoon-flux:0.7",
+    "seed": 42
+  },
+  "animations": {
+    "idle": {
+      "frames": 4,
+      "prompts": [
+        "standing still in relaxed neutral pose",
+        "slight bounce upward, one tentacle raised cheerfully",
+        "back to neutral position, all tentacles relaxed",
+        "other tentacle gives a friendly wave"
+      ]
+    },
+    "walk": {
+      "frames": 6,
+      "prompts": [
+        "moving forward, tentacles extended ahead",
+        "mid-stride, tentacles pulling body forward",
+        "forward position reached, tentacles lifting",
+        "tentacles extend again for next step",
+        "mid-stride on opposite side",
+        "completing walk cycle, ready to repeat"
+      ]
+    },
+    "jump": {
+      "frames": 4,
+      "prompts": [
+        "crouching down, preparing to jump",
+        "launching upward, tentacles extended upward",
+        "at apex of jump, tentacles spread wide",
+        "beginning to fall, tentacles positioning for landing"
+      ]
+    },
+    "attack": {
+      "frames": 5,
+      "prompts": [
+        "wind-up pose, one tentacle pulling back",
+        "beginning attack motion, tentacle extending",
+        "full attack extension, tentacle striking forward",
+        "attack impact moment, tentacle at full reach",
+        "recovery pose, tentacle returning to ready position"
+      ]
+    }
+  },
+  "resolution": [512, 512]
+}

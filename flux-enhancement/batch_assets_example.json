@@ -1,0 +1,86 @@
+{
+  "project": "Octoplat Game Assets",
+  "assets": [
+    {
+      "type": "enemy_sprite",
+      "prompt": "angry red crab enemy with blue accents, raised claws, side view, cartoon style, 2D game sprite, white background <lora:cartoon-flux:0.6>",
+      "output": "output/enemies/ocean_crab.png",
+      "width": 512,
+      "height": 512,
+      "seed": 100,
+      "remove_bg": true
+    },
+    {
+      "type": "enemy_sprite",
+      "prompt": "grumpy pufferfish inflated into spiky ball, yellow with orange spots, angry cartoon face, side view, 2D platformer enemy, white background <lora:cartoon-flux:0.6>",
+      "output": "output/enemies/pufferfish.png",
+      "width": 512,
+      "height": 512,
+      "seed": 101,
+      "remove_bg": true
+    },
+    {
+      "type": "enemy_sprite",
+      "prompt": "cute pink jellyfish with glowing blue bioluminescence, floating gracefully, side view, translucent bell, game sprite art, white background <lora:cartoon-flux:0.6>",
+      "output": "output/enemies/jellyfish.png",
+      "width": 512,
+      "height": 512,
+      "seed": 102,
+      "remove_bg": true
+    },
+    {
+      "type": "collectible_item",
+      "prompt": "glowing pearl collectible with iridescent sheen, sparkle effect, white pearl, game pickup item, white background, icon style",
+      "output": "output/items/pearl.png",
+      "width": 256,
+      "height": 256,
+      "seed": 200,
+      "remove_bg": true
+    },
+    {
+      "type": "collectible_item",
+      "prompt": "wooden pirate treasure chest with brass lock, gold coins spilling out, cartoon style, game object, white background",
+      "output": "output/items/treasure_chest.png",
+      "width": 512,
+      "height": 512,
+      "seed": 201,
+      "remove_bg": true
+    },
+    {
+      "type": "ui_icon",
+      "prompt": "cute cartoon heart icon, glossy red and pink gradient, shiny surface, 64x64 pixel icon design, game UI element, white background",
+      "output": "output/ui/health_heart.png",
+      "width": 256,
+      "height": 256,
+      "seed": 300,
+      "remove_bg": true
+    },
+    {
+      "type": "background",
+      "prompt": "deep ocean underwater background for 2D platformer, dark blue gradient water, gentle light rays from surface, floating particles and bubbles, peaceful atmosphere, distant rock formations, parallax scrolling layer, vibrant game art <lora:ghibli-style-flux:0.5>",
+      "output": "output/backgrounds/ocean_depths_bg.png",
+      "width": 1280,
+      "height": 704,
+      "seed": 400,
+      "remove_bg": false
+    },
+    {
+      "type": "background",
+      "prompt": "vibrant coral reef background for 2D platformer, colorful pink and orange coral formations, tropical fish swimming, bright turquoise water, sun rays, lush underwater garden, side-scrolling game layer, cheerful atmosphere <lora:ghibli-style-flux:0.5>",
+      "output": "output/backgrounds/coral_reef_bg.png",
+      "width": 1280,
+      "height": 704,
+      "seed": 401,
+      "remove_bg": false
+    },
+    {
+      "type": "platform_tile",
+      "prompt": "pink and orange coral platform tileset for 2D game, textured surface for walking, modular 32x32 pixel style tiles, top-down view, colorful underwater platforms, seamless tiling edges, game asset <lora:pixel-art-flux:0.6>",
+      "output": "output/tiles/coral_platform.png",
+      "width": 1024,
+      "height": 512,
+      "seed": 500,
+      "remove_bg": false
+    }
+  ]
+}

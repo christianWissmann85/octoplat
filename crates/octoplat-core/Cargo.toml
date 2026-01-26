@@ -1,0 +1,9 @@
+[package]
+name = "octoplat-core"
+version.workspace = true
+edition.workspace = true
+description = "Core logic for Octoplat - procedural generation, validation, and level data"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }

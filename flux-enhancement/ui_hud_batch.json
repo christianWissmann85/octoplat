@@ -1,0 +1,53 @@
+{
+  "output_dir": "/home/chris/octoplat/assets/ui",
+  "assets": [
+    {
+      "name": "heart_full",
+      "subdir": "hud",
+      "prompt": "cute cartoon heart icon, full red heart with glossy shine, game UI health icon, Shantae game style, vibrant red color, simple clean design, transparent background, 2D game art <lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5>",
+      "width": 64,
+      "height": 64,
+      "remove_bg": true
+    },
+    {
+      "name": "heart_empty",
+      "subdir": "hud",
+      "prompt": "cute cartoon heart icon outline, empty heart with dark gray interior, game UI health icon, Shantae game style, muted colors, simple clean design, transparent background, 2D game art <lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5>",
+      "width": 64,
+      "height": 64,
+      "remove_bg": true
+    },
+    {
+      "name": "gem",
+      "subdir": "hud",
+      "prompt": "sparkling blue diamond gem icon, cartoon style collectible crystal, game UI gem counter icon, bright cyan and teal colors, glossy faceted surface, sparkle effects, transparent background, 2D platformer game art <lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5>",
+      "width": 64,
+      "height": 64,
+      "remove_bg": true
+    },
+    {
+      "name": "stamina_frame",
+      "subdir": "hud",
+      "prompt": "horizontal game UI bar frame, decorative metal or stone border, underwater ocean theme, blue and teal colors with subtle gold accents, empty center for fill bar, game HUD element, transparent background, 2D game art <lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5>",
+      "width": 128,
+      "height": 32,
+      "remove_bg": true
+    },
+    {
+      "name": "jet_icon",
+      "subdir": "hud",
+      "prompt": "cartoon water jet boost icon, blue water droplet with speed lines, underwater ability icon, bright cyan and blue colors, dynamic motion effect, game UI ability icon, transparent background, 2D platformer game art <lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5>",
+      "width": 64,
+      "height": 64,
+      "remove_bg": true
+    },
+    {
+      "name": "ink_icon",
+      "subdir": "hud",
+      "prompt": "cartoon ink cloud ability icon, purple ink splatter or cloud, octopus ink defense ability, dark purple and magenta colors, swirling smoke effect, game UI ability icon, transparent background, 2D platformer game art <lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5>",
+      "width": 64,
+      "height": 64,
+      "remove_bg": true
+    }
+  ]
+}

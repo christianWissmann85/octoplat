@@ -1,0 +1,43 @@
+{
+  "metadata": {
+    "description": "Batch generation spec for biome tile textures",
+    "loras": "<lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5>",
+    "width": 128,
+    "height": 128,
+    "steps": 30
+  },
+  "images": [
+    {
+      "filename": "ocean_depths.png",
+      "prompt": "seamless tileable texture, underwater sandy rocky seafloor, ocean depths, dark blue green tones, smooth rocks, scattered pebbles, subtle sand patterns, game texture, Studio Ghibli style"
+    },
+    {
+      "filename": "coral_reefs.png",
+      "prompt": "seamless tileable texture, coral reef surface, organic coral patterns, pink orange purple tones, natural flowing shapes, underwater tropical, game texture, Studio Ghibli style"
+    },
+    {
+      "filename": "tropical_shore.png",
+      "prompt": "seamless tileable texture, tropical beach sand, warm sandy surface, light beige golden tones, subtle shell fragments, smooth natural patterns, game texture, Studio Ghibli style"
+    },
+    {
+      "filename": "shipwreck.png",
+      "prompt": "seamless tileable texture, old wooden ship planks, weathered dark wood, brown wooden boards, nautical shipwreck, aged wood grain, game texture, Studio Ghibli style"
+    },
+    {
+      "filename": "arctic_waters.png",
+      "prompt": "seamless tileable texture, frozen ice surface, arctic ice crystals, pale blue white frost patterns, cold crystalline, frozen underwater, game texture, Studio Ghibli style"
+    },
+    {
+      "filename": "volcanic_vents.png",
+      "prompt": "seamless tileable texture, volcanic rock surface, dark basalt stone, orange red cracks, magma veins, rough igneous rock, game texture, Studio Ghibli style"
+    },
+    {
+      "filename": "sunken_ruins.png",
+      "prompt": "seamless tileable texture, ancient stone bricks, weathered temple blocks, moss covered gray stone, underwater ruins, cracked masonry, game texture, Studio Ghibli style"
+    },
+    {
+      "filename": "abyss.png",
+      "prompt": "seamless tileable texture, dark crystalline surface, deep ocean abyss, dark purple black crystals, bioluminescent hints, mysterious ancient material, game texture, Studio Ghibli style"
+    }
+  ]
+}

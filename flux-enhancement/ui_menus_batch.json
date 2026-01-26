@@ -1,0 +1,85 @@
+{
+  "output_dir": "/home/chris/octoplat/assets/ui",
+  "assets": [
+    {
+      "name": "main_menu",
+      "subdir": "menus",
+      "prompt": "underwater ocean scene for game main menu, deep blue waters with light rays from surface, colorful coral reef in distance, floating bubbles and particles, mysterious and inviting atmosphere, vibrant 2D game art style, wide composition, no characters <lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5>",
+      "width": 1280,
+      "height": 720,
+      "remove_bg": false
+    },
+    {
+      "name": "settings",
+      "subdir": "menus",
+      "prompt": "calm underwater ocean scene for settings menu, soft blue gradient water, gentle light filtering from above, peaceful coral and seaweed silhouettes, floating particles, serene atmosphere, vibrant 2D game art style, no characters <lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5>",
+      "width": 1280,
+      "height": 720,
+      "remove_bg": false
+    },
+    {
+      "name": "ocean_depths",
+      "subdir": "biomes",
+      "prompt": "deep ocean depths biome thumbnail, dark blue waters fading to black, distant rock formations, bioluminescent particles, mysterious deep sea atmosphere, underwater platformer game art, square icon <lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5>",
+      "width": 128,
+      "height": 128,
+      "remove_bg": false
+    },
+    {
+      "name": "coral_reefs",
+      "subdir": "biomes",
+      "prompt": "vibrant coral reef biome thumbnail, colorful coral formations, tropical fish, bright turquoise water, pink and orange corals, underwater platformer game art, square icon <lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5>",
+      "width": 128,
+      "height": 128,
+      "remove_bg": false
+    },
+    {
+      "name": "tropical_shore",
+      "subdir": "biomes",
+      "prompt": "tropical shore biome thumbnail, shallow crystal clear water, sandy bottom visible, palm tree silhouettes above, sunset colors, beach vibes, underwater platformer game art, square icon <lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5>",
+      "width": 128,
+      "height": 128,
+      "remove_bg": false
+    },
+    {
+      "name": "shipwreck",
+      "subdir": "biomes",
+      "prompt": "shipwreck biome thumbnail, sunken pirate ship hull, broken masts, treasure chests, murky green-brown water, nautical debris, underwater platformer game art, square icon <lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5>",
+      "width": 128,
+      "height": 128,
+      "remove_bg": false
+    },
+    {
+      "name": "arctic_waters",
+      "subdir": "biomes",
+      "prompt": "arctic waters biome thumbnail, icy blue underwater scene, frozen ice formations, aurora glow through ice ceiling, cold atmosphere, snowflakes, underwater platformer game art, square icon <lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5>",
+      "width": 128,
+      "height": 128,
+      "remove_bg": false
+    },
+    {
+      "name": "volcanic_vents",
+      "subdir": "biomes",
+      "prompt": "volcanic vents biome thumbnail, underwater volcanic activity, glowing orange lava cracks, dark volcanic rock, steam bubbles rising, intense red and orange glow, underwater platformer game art, square icon <lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5>",
+      "width": 128,
+      "height": 128,
+      "remove_bg": false
+    },
+    {
+      "name": "sunken_ruins",
+      "subdir": "biomes",
+      "prompt": "sunken ruins biome thumbnail, ancient underwater temple, crumbling stone columns, glowing mystical runes, overgrown with coral, mysterious atmosphere, underwater platformer game art, square icon <lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5>",
+      "width": 128,
+      "height": 128,
+      "remove_bg": false
+    },
+    {
+      "name": "abyss",
+      "subdir": "biomes",
+      "prompt": "abyss biome thumbnail, deep dark void underwater, near-black with faint bioluminescent spots, distant anglerfish glow, crushing depths, ominous and mysterious, underwater platformer game art, square icon <lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5>",
+      "width": 128,
+      "height": 128,
+      "remove_bg": false
+    }
+  ]
+}

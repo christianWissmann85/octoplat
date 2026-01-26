@@ -1,0 +1,29 @@
+{
+  "output_dir": "/home/chris/octoplat/assets/ui",
+  "assets": [
+    {
+      "name": "level_complete_banner",
+      "subdir": "screens",
+      "prompt": "<lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5> celebratory underwater victory scene, golden light rays shining from above, sparkles and bubbles floating upward, treasure chest overflowing with gems and pearls at bottom, colorful coral reef frame border, triumphant joyful atmosphere, vibrant 2D game art for level complete screen, teal and gold color scheme, hand-drawn stylized cartoon illustration",
+      "width": 1280,
+      "height": 720,
+      "remove_bg": false
+    },
+    {
+      "name": "game_over_background",
+      "subdir": "screens",
+      "prompt": "<lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5> dark moody underwater scene, deep ocean abyss, faint red and purple bioluminescent glow, sinking debris and scattered gems falling into darkness, melancholy atmosphere, somber 2D game art for game over screen, dark blue and muted red color scheme, hand-drawn stylized cartoon illustration",
+      "width": 1280,
+      "height": 720,
+      "remove_bg": false
+    },
+    {
+      "name": "pause_overlay",
+      "subdir": "screens",
+      "prompt": "<lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5> decorative underwater frame border panel, ornate seashell and coral corner decorations, translucent blue-green center area, bubble accents along edges, nautical rope border detail, elegant 2D game UI panel frame, teal and white color scheme, hand-drawn stylized cartoon illustration, single object, centered, white background",
+      "width": 800,
+      "height": 600,
+      "remove_bg": true
+    }
+  ]
+}

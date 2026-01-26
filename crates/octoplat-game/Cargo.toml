@@ -1,0 +1,21 @@
+[package]
+name = "octoplat-game"
+version.workspace = true
+edition.workspace = true
+description = "Game runtime for Octoplat with macroquad rendering"
+build = "build.rs"
+
+[[bin]]
+name = "octoplat"
+path = "src/bin/main.rs"
+
+[target.'cfg(windows)'.build-dependencies]
+winres = "0.1"
+
+[dependencies]
+octoplat-core = { path = "../octoplat-core" }
+macroquad = { version = "0.4", features = ["audio"] }
+gamepads = "0.1"
+serde = { workspace = true }
+serde_json = { workspace = true }
+rust-embed = "8.0"
