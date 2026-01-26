@@ -3,7 +3,7 @@
 //! Tracks all state for a single roguelite run.
 
 use crate::procgen::{BiomeId, BiomeProgression};
-use super::DifficultyPreset;
+use super::{DifficultyPreset, GameplayDifficulty};
 
 /// Manages a single roguelite run
 #[derive(Clone, Debug)]
@@ -22,8 +22,10 @@ pub struct RogueliteRun {
     pub run_deaths: u32,
     /// Biome progression tracker
     pub biome_progression: BiomeProgression,
-    /// Difficulty preset for this run
+    /// Difficulty preset for this run (affects level generation)
     pub preset: DifficultyPreset,
+    /// Gameplay difficulty for this run (affects HP, i-frames, enemy speed)
+    pub gameplay_difficulty: GameplayDifficulty,
 }
 
 impl RogueliteRun {
@@ -37,6 +39,7 @@ impl RogueliteRun {
             run_deaths: 0,
             biome_progression: BiomeProgression::new(),
             preset: DifficultyPreset::Standard,
+            gameplay_difficulty: GameplayDifficulty::TreadingWater,
         }
     }
 
@@ -49,6 +52,7 @@ impl RogueliteRun {
         self.run_time = 0.0;
         self.run_deaths = 0;
         self.preset = preset;
+        // gameplay_difficulty is set separately via SetGameplayDifficulty action
         self.biome_progression.set_locked_biome(Some(biome));
     }
 

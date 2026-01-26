@@ -85,6 +85,16 @@ pub struct GameConfig {
     pub hit_flash_duration: f32,
     pub input_deadzone: f32, // Movement input threshold
 
+    // HP system
+    pub player_max_hp: u8,
+    pub invincibility_duration: f32,
+    pub enemy_speed_multiplier: f32,
+
+    // Hazard damage values
+    pub spike_damage: u8,
+    pub crab_damage: u8,
+    pub pufferfish_damage: u8,
+
     // Hazards
     pub death_animation_time: f32,
 
@@ -305,6 +315,16 @@ impl Default for GameConfig {
             player_hitbox: vec2(24.0, 30.0),
             hit_flash_duration: 0.12,
             input_deadzone: 0.1, // Movement input threshold
+
+            // HP system (defaults for Normal/Treading Water difficulty)
+            player_max_hp: 3,
+            invincibility_duration: 1.0,
+            enemy_speed_multiplier: 1.0,
+
+            // Hazard damage values
+            spike_damage: 1,
+            crab_damage: 1,
+            pufferfish_damage: 2,
 
             // Hazards
             death_animation_time: 0.5,

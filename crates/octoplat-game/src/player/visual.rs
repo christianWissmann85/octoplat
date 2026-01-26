@@ -169,6 +169,50 @@ impl Player {
     }
 
     // ========================================================================
+    // HP System
+    // ========================================================================
+
+    /// Take damage from a hazard or enemy
+    ///
+    /// Returns true if the player died (HP reached 0)
+    pub fn take_damage(&mut self, amount: u8, config: &GameConfig) -> bool {
+        if amount == 0 || self.current_hp == 0 {
+            return self.current_hp == 0;
+        }
+
+        // Apply damage
+        self.current_hp = self.current_hp.saturating_sub(amount);
+
+        // Trigger visual feedback
+        self.trigger_hit_flash(config);
+
+        // Start invincibility frames (using config duration)
+        self.start_invincibility(config.invincibility_duration);
+
+        // Return true if player died
+        self.current_hp == 0
+    }
+
+    /// Heal HP by the given amount (capped at max_hp)
+    pub fn heal(&mut self, amount: u8) {
+        self.current_hp = (self.current_hp + amount).min(self.max_hp);
+    }
+
+    /// Reset HP to maximum (called at level start)
+    pub fn reset_hp(&mut self, config: &GameConfig) {
+        self.max_hp = config.player_max_hp;
+        self.current_hp = self.max_hp;
+    }
+
+    /// Get HP as a fraction (0.0 to 1.0) for UI bar display
+    pub fn hp_fraction(&self) -> f32 {
+        if self.max_hp == 0 {
+            return 1.0;
+        }
+        self.current_hp as f32 / self.max_hp as f32
+    }
+
+    // ========================================================================
     // Anticipation Animation
     // ========================================================================
 

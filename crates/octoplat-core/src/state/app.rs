@@ -3,7 +3,7 @@
 //! Manages transitions between menus, gameplay, and other screens.
 
 use crate::procgen::BiomeId;
-use super::DifficultyPreset;
+use super::{DifficultyPreset, GameplayDifficulty};
 
 /// Top-level application state
 #[derive(Clone, Debug, PartialEq, Default)]
@@ -27,6 +27,8 @@ pub enum AppState {
     RogueLiteLeaderboard,
     /// Biome selection for RogueLite mode
     BiomeSelect,
+    /// Difficulty selection for RogueLite mode (after biome selection)
+    DifficultySelect { biome: BiomeId },
     /// Error screen with message (for generation failures, etc.)
     Error(String),
 }
@@ -271,6 +273,57 @@ impl BiomeMenuItem {
             BiomeMenuItem::SunkenRuins => Some(BiomeId::SunkenRuins),
             BiomeMenuItem::Abyss => Some(BiomeId::Abyss),
             BiomeMenuItem::Back => None,
+        }
+    }
+}
+
+/// Menu selection for difficulty selection
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DifficultyMenuItem {
+    Drifting,
+    TreadingWater,
+    OctoHard,
+    TheKraken,
+    Back,
+}
+
+impl DifficultyMenuItem {
+    pub const ALL: [DifficultyMenuItem; 5] = [
+        DifficultyMenuItem::Drifting,
+        DifficultyMenuItem::TreadingWater,
+        DifficultyMenuItem::OctoHard,
+        DifficultyMenuItem::TheKraken,
+        DifficultyMenuItem::Back,
+    ];
+
+    pub fn label(&self) -> &'static str {
+        match self {
+            DifficultyMenuItem::Drifting => "Drifting",
+            DifficultyMenuItem::TreadingWater => "Treading Water",
+            DifficultyMenuItem::OctoHard => "OctoHard",
+            DifficultyMenuItem::TheKraken => "The Kraken",
+            DifficultyMenuItem::Back => "Back",
+        }
+    }
+
+    pub fn description(&self) -> &'static str {
+        match self {
+            DifficultyMenuItem::Drifting => "5 HP | 2.0s i-frames | 0.7x enemy speed | 7 lives",
+            DifficultyMenuItem::TreadingWater => "3 HP | 1.0s i-frames | 1.0x enemy speed | 5 lives",
+            DifficultyMenuItem::OctoHard => "2 HP | 0.5s i-frames | 1.0x enemy speed | 4 lives",
+            DifficultyMenuItem::TheKraken => "1 HP | 0.3s i-frames | 1.2x enemy speed | 3 lives",
+            DifficultyMenuItem::Back => "Return to biome selection",
+        }
+    }
+
+    /// Convert menu item to GameplayDifficulty (if applicable)
+    pub fn to_gameplay_difficulty(&self) -> Option<GameplayDifficulty> {
+        match self {
+            DifficultyMenuItem::Drifting => Some(GameplayDifficulty::Drifting),
+            DifficultyMenuItem::TreadingWater => Some(GameplayDifficulty::TreadingWater),
+            DifficultyMenuItem::OctoHard => Some(GameplayDifficulty::OctoHard),
+            DifficultyMenuItem::TheKraken => Some(GameplayDifficulty::TheKraken),
+            DifficultyMenuItem::Back => None,
         }
     }
 }

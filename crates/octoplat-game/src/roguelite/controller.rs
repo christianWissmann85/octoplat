@@ -26,7 +26,9 @@ pub fn start_biome_challenge(
     seed: Option<u64>,
 ) {
     run.start_biome_challenge(biome, preset, seed);
-    lives.start_session(config.starting_lives, config.endless_gem_milestone, true);
+    // Use starting lives from gameplay difficulty setting
+    let starting_lives = run.gameplay_difficulty.starting_lives();
+    lives.start_session(starting_lives, config.endless_gem_milestone, true);
 }
 
 /// Generate next level for roguelite mode using linked segments

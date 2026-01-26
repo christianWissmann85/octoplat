@@ -35,10 +35,8 @@ pub struct MenuTextures {
 
 /// Textures for HUD elements
 pub struct HudTextures {
-    /// Full heart icon for lives display
-    pub heart_full: Option<Texture2D>,
-    /// Empty heart icon for lives display
-    pub heart_empty: Option<Texture2D>,
+    /// Octopus icon for lives display
+    pub life_icon: Option<Texture2D>,
     /// Gem/diamond icon for collectibles counter
     pub gem: Option<Texture2D>,
     /// Decorative frame for the stamina bar
@@ -133,8 +131,7 @@ impl UiTextureManager {
                 settings: None,
             },
             hud: HudTextures {
-                heart_full: None,
-                heart_empty: None,
+                life_icon: None,
                 gem: None,
                 stamina_frame: None,
                 jet_icon: None,
@@ -172,8 +169,7 @@ impl UiTextureManager {
         self.menus.settings = load_ui_texture("menus/settings.png").await;
 
         // HUD element textures
-        self.hud.heart_full = load_ui_texture("hud/heart_full.png").await;
-        self.hud.heart_empty = load_ui_texture("hud/heart_empty.png").await;
+        self.hud.life_icon = load_ui_texture("hud/life_icon.png").await;
         self.hud.gem = load_ui_texture("hud/gem.png").await;
         self.hud.stamina_frame = load_ui_texture("hud/stamina_frame.png").await;
         self.hud.jet_icon = load_ui_texture("hud/jet_icon.png").await;
@@ -236,7 +232,7 @@ impl UiTextureManager {
 
     /// Check if any HUD textures are available
     pub fn has_hud_textures(&self) -> bool {
-        self.hud.heart_full.is_some()
+        self.hud.life_icon.is_some()
             || self.hud.gem.is_some()
             || self.hud.jet_icon.is_some()
             || self.hud.ink_icon.is_some()

@@ -6,13 +6,14 @@ use macroquad::prelude::*;
 
 use crate::app::{GameAction, GameActions, MenuId};
 use crate::app_state::{
-    AppState, BiomeMenuItem, ErrorMenuItem, GameOverMenuItem, LevelCompleteMenuItem, MainMenuItem, PauseMenuItem,
-    PlayMode, SettingsMenuItem,
+    AppState, BiomeMenuItem, ErrorMenuItem, GameOverMenuItem,
+    LevelCompleteMenuItem, MainMenuItem, PauseMenuItem, PlayMode, SettingsMenuItem,
 };
 use crate::audio::SoundId;
 use crate::game_state::GameState;
-use crate::procgen::DifficultyPreset;
+use crate::procgen::{BiomeId, DifficultyPreset};
 use crate::ui::{self, MenuAction};
+use octoplat_core::state::DifficultyMenuItem;
 
 /// Update Title screen state
 pub fn title_update(game: &mut GameState, dt: f32) -> GameActions {
@@ -418,14 +419,11 @@ pub fn biome_select_update(game: &mut GameState, dt: f32) -> GameActions {
                     actions.push(GameAction::SetStateDirect(AppState::MainMenu));
                 }
                 biome_item => {
-                    // Start biome challenge with the selected biome (now uses linked segments)
+                    // Navigate to difficulty selection with the selected biome
                     if let Some(biome_id) = biome_item.to_biome_id() {
-                        actions.push(GameAction::StartMenuSlide(ui::SlideDirection::Down));
-                        actions.push(GameAction::StartBiomeChallenge {
-                            biome: biome_id,
-                            preset: DifficultyPreset::Standard,
-                            seed: None,
-                        });
+                        actions.push(GameAction::ResetMenuSelection(MenuId::DifficultySelect));
+                        actions.push(GameAction::StartMenuSlide(ui::SlideDirection::Left));
+                        actions.push(GameAction::SetStateDirect(AppState::DifficultySelect { biome: biome_id }));
                     }
                 }
             }
@@ -449,6 +447,57 @@ pub fn biome_select_update(game: &mut GameState, dt: f32) -> GameActions {
 /// Render BiomeSelect state
 pub fn biome_select_render(game: &GameState, time: f32) {
     ui::draw_biome_select(&game.ui.menus.biome_select, time, Some(&game.level.ui_textures));
+}
+
+/// Update DifficultySelect state
+pub fn difficulty_select_update(game: &mut GameState, dt: f32, biome: BiomeId) -> GameActions {
+    let mut actions = GameActions::new();
+
+    // Track selection for sound
+    let prev_selection = game.ui.menus.difficulty_select.selected;
+
+    // Update menu
+    match game.ui.menus.difficulty_select.update(&game.input, dt) {
+        MenuAction::Select(item) => {
+            actions.push(GameAction::PlaySound(SoundId::MenuSelect));
+            match item {
+                DifficultyMenuItem::Back => {
+                    actions.push(GameAction::StartMenuSlide(ui::SlideDirection::Right));
+                    actions.push(GameAction::SetStateDirect(AppState::BiomeSelect));
+                }
+                difficulty_item => {
+                    // Start biome challenge with the selected difficulty
+                    if let Some(gameplay_difficulty) = difficulty_item.to_gameplay_difficulty() {
+                        actions.push(GameAction::SetGameplayDifficulty(gameplay_difficulty));
+                        actions.push(GameAction::StartMenuSlide(ui::SlideDirection::Down));
+                        actions.push(GameAction::StartBiomeChallenge {
+                            biome,
+                            preset: DifficultyPreset::Standard,
+                            seed: None,
+                        });
+                    }
+                }
+            }
+        }
+        MenuAction::Cancel => {
+            actions.push(GameAction::PlaySound(SoundId::MenuBack));
+            actions.push(GameAction::StartMenuSlide(ui::SlideDirection::Right));
+            actions.push(GameAction::SetStateDirect(AppState::BiomeSelect));
+        }
+        _ => {}
+    }
+
+    // Play navigation sound if selection changed
+    if game.ui.menus.difficulty_select.selected != prev_selection {
+        actions.push(GameAction::PlaySound(SoundId::MenuMove));
+    }
+
+    actions
+}
+
+/// Render DifficultySelect state
+pub fn difficulty_select_render(game: &GameState, time: f32, biome: BiomeId) {
+    ui::draw_difficulty_select(&game.ui.menus.difficulty_select, biome, time, Some(&game.level.ui_textures));
 }
 
 /// Update Error state

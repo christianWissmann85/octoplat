@@ -3,7 +3,7 @@
 //! Handles collision checks between player and hazards, enemies, and breakable blocks.
 
 use std::collections::HashSet;
-use macroquad::prelude::Rect;
+use macroquad::prelude::{Rect, Vec2};
 
 use octoplat_core::level::TileMap;
 
@@ -12,8 +12,29 @@ use crate::config::GameConfig;
 use crate::hazards::{Crab, Pufferfish};
 use crate::player::Player;
 
+/// Result of hazard collision check
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct HazardCollisionResult {
+    /// Damage amount (0 = no collision)
+    pub damage: u8,
+    /// Position of the hazard that was hit (for knockback/effects)
+    pub position: Option<Vec2>,
+}
+
+impl HazardCollisionResult {
+    pub fn none() -> Self {
+        Self { damage: 0, position: None }
+    }
+
+    pub fn hit(damage: u8, position: Vec2) -> Self {
+        Self { damage, position: Some(position) }
+    }
+}
+
 /// Check if player is touching any hazard tiles
-pub fn check_hazard_collision(player: &Player, tilemap: &TileMap) -> bool {
+///
+/// Returns the damage amount if hit (spike_damage from config), or 0 if no collision.
+pub fn check_hazard_collision(player: &Player, tilemap: &TileMap, config: &GameConfig) -> HazardCollisionResult {
     let pos_core = vec2_from_mq(player.position);
     let hazard_rects: Vec<Rect> = tilemap.get_nearby_hazard_rects(pos_core, 64.0)
         .into_iter().map(rect_to_mq).collect();
@@ -21,13 +42,17 @@ pub fn check_hazard_collision(player: &Player, tilemap: &TileMap) -> bool {
 
     for hazard in hazard_rects {
         if player_rect.overlaps(&hazard) {
-            return true;
+            let hazard_center = Vec2::new(
+                hazard.x + hazard.w / 2.0,
+                hazard.y + hazard.h / 2.0,
+            );
+            return HazardCollisionResult::hit(config.spike_damage, hazard_center);
         }
     }
-    false
+    HazardCollisionResult::none()
 }
 
-/// Type of enemy that was killed
+/// Type of enemy that was killed or that hit the player
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EnemyType {
     Crab,
@@ -39,11 +64,15 @@ pub enum EnemyType {
 pub enum EnemyCollisionResult {
     /// No collision occurred
     None,
-    /// Player died from collision (not attacking)
-    PlayerDied,
+    /// Player was hit by enemy - includes damage, position, and enemy type
+    PlayerHit {
+        damage: u8,
+        position: Vec2,
+        enemy_type: EnemyType,
+    },
     /// Enemy was killed by jet boost - includes position and type for effects
     EnemyKilled {
-        position: macroquad::prelude::Vec2,
+        position: Vec2,
         enemy_type: EnemyType,
     },
 }
@@ -51,7 +80,7 @@ pub enum EnemyCollisionResult {
 /// Check enemy collisions, handling jet boost kills
 ///
 /// Returns the collision result. If EnemyKilled, the enemy is marked as dead
-/// and the player is bounced. The caller must handle the PlayerDied case.
+/// and the player is bounced. The caller must handle the PlayerHit case.
 /// Player is invincible during jet boost (any direction kills enemies).
 ///
 /// Accepts iterators over mutable references for HashMap compatibility.
@@ -85,8 +114,12 @@ pub fn check_enemy_collision<'a>(
                     enemy_type: EnemyType::Crab,
                 };
             } else if !player.is_inked && !player.is_invincible() {
-                // Player dies (unless invincible)
-                return EnemyCollisionResult::PlayerDied;
+                // Player takes damage (unless invincible)
+                return EnemyCollisionResult::PlayerHit {
+                    damage: config.crab_damage,
+                    position: crab.position,
+                    enemy_type: EnemyType::Crab,
+                };
             }
         }
     }
@@ -110,8 +143,12 @@ pub fn check_enemy_collision<'a>(
                     enemy_type: EnemyType::Pufferfish,
                 };
             } else if !player.is_inked && !player.is_invincible() {
-                // Player dies (unless invincible)
-                return EnemyCollisionResult::PlayerDied;
+                // Player takes damage (unless invincible)
+                return EnemyCollisionResult::PlayerHit {
+                    damage: config.pufferfish_damage,
+                    position: puffer.position,
+                    enemy_type: EnemyType::Pufferfish,
+                };
             }
         }
     }

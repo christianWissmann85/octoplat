@@ -62,6 +62,7 @@ fn execute_actions(game: &mut GameState, actions: GameActions) {
                     MenuId::GameOver => game.ui.menus.game_over.selected = 0,
                     MenuId::Settings => game.ui.menus.settings.selected = 0,
                     MenuId::BiomeSelect => game.ui.menus.biome_select.selected = 0,
+                    MenuId::DifficultySelect => game.ui.menus.difficulty_select.selected = 0,
                     MenuId::LevelComplete => game.ui.menus.level_complete.selected = 0,
                     MenuId::Error => game.ui.menus.error.selected = 0,
                     MenuId::RogueLiteLeaderboard => {} // No selection state
@@ -110,6 +111,27 @@ fn execute_actions(game: &mut GameState, actions: GameActions) {
                 game.trigger_death();
                 // Dramatic zoom out on death
                 game.gameplay.camera.zoom_out_dramatic();
+            }
+            GameAction::TakeDamage { amount, source_pos: _ } => {
+                // Check if player is already invincible
+                if game.gameplay.player.is_invincible() || game.gameplay.player.is_inked {
+                    // No damage taken while invincible
+                } else {
+                    // Apply damage through the HP system
+                    let died = game.gameplay.player.take_damage(amount, &game.gameplay.config);
+
+                    // Play hit sound
+                    game.play_sound(SoundId::PlayerHurt);
+
+                    // Spawn hurt particles at player position
+                    game.fx.effects.spawn_hurt(game.gameplay.player.position);
+
+                    if died {
+                        // HP reached 0 - trigger death
+                        game.trigger_death();
+                        game.gameplay.camera.zoom_out_dramatic();
+                    }
+                }
             }
             GameAction::Respawn => {
                 game.respawn_player();
@@ -167,6 +189,17 @@ fn execute_actions(game: &mut GameState, actions: GameActions) {
             }
             GameAction::StartBiomeChallenge { biome, preset, seed } => {
                 start_roguelite_mode(game, preset, seed, biome);
+            }
+            GameAction::SetGameplayDifficulty(difficulty) => {
+                // Apply difficulty settings to config
+                game.gameplay.config.player_max_hp = difficulty.max_hp();
+                game.gameplay.config.invincibility_duration = difficulty.invincibility_duration();
+                game.gameplay.config.enemy_speed_multiplier = difficulty.enemy_speed_multiplier();
+                // Update player HP to match new max
+                game.gameplay.player.max_hp = difficulty.max_hp();
+                game.gameplay.player.current_hp = difficulty.max_hp();
+                // Store difficulty in roguelite run for tracking
+                game.progression.roguelite.gameplay_difficulty = difficulty;
             }
             GameAction::CompleteRogueliteLevel => {
                 let biome_advanced = roguelite::controller::complete_level(&mut game.progression.roguelite, game.gameplay.level_env.gems_collected);
@@ -578,6 +611,13 @@ async fn main() {
                 let actions = handlers::menus::biome_select_update(&mut game, dt);
                 execute_actions(&mut game, actions);
                 handlers::menus::biome_select_render(&game, time);
+            }
+
+            AppState::DifficultySelect { biome } => {
+                let biome = *biome;
+                let actions = handlers::menus::difficulty_select_update(&mut game, dt, biome);
+                execute_actions(&mut game, actions);
+                handlers::menus::difficulty_select_render(&game, time, biome);
             }
 
             AppState::Error(ref message) => {

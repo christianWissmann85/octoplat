@@ -3,8 +3,8 @@
 //! Consolidates all menu states into a single manager.
 
 use octoplat_core::state::{
-    AppState, BiomeMenuItem, ErrorMenuItem, GameOverMenuItem, LevelCompleteMenuItem, MainMenuItem,
-    PauseMenuItem, SettingsMenuItem,
+    AppState, BiomeMenuItem, DifficultyMenuItem, ErrorMenuItem, GameOverMenuItem,
+    LevelCompleteMenuItem, MainMenuItem, PauseMenuItem, SettingsMenuItem,
 };
 use super::MenuState;
 
@@ -17,6 +17,7 @@ pub struct GameMenus {
     pub settings: MenuState<SettingsMenuItem>,
     pub settings_return_state: Option<AppState>,
     pub biome_select: MenuState<BiomeMenuItem>,
+    pub difficulty_select: MenuState<DifficultyMenuItem>,
     pub error: MenuState<ErrorMenuItem>,
 }
 
@@ -30,6 +31,7 @@ impl GameMenus {
             settings: MenuState::from_array(SettingsMenuItem::ALL),
             settings_return_state: None,
             biome_select: MenuState::from_array(BiomeMenuItem::ALL),
+            difficulty_select: MenuState::from_array(DifficultyMenuItem::ALL),
             error: MenuState::from_array(ErrorMenuItem::ALL),
         }
     }

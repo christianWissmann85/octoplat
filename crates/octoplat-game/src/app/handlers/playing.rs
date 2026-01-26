@@ -66,6 +66,9 @@ pub fn update_death(game: &mut GameState, dt: f32) -> GameActions {
     // Still update the legacy death timer for backwards compatibility
     let _ = game.gameplay.death.update(dt);
 
+    // Update the death transition (must be called here since update_effects is skipped when dead)
+    game.ui.death_transition.update(dt);
+
     // Use death transition timing for respawn (triggers during Hold phase)
     if game.ui.death_transition.should_switch_state() {
         game.ui.death_transition.mark_switched();
@@ -140,11 +143,15 @@ fn update_player_physics(game: &mut GameState, dt: f32) {
     );
 }
 
-/// Check hazard collision - returns TriggerDeath action if hit
+/// Check hazard collision - returns TakeDamage action if hit
 fn update_hazards(game: &GameState) -> Option<GameAction> {
     if let Some(tilemap) = game.level.manager.tilemap() {
-        if gameplay::check_hazard_collision(&game.gameplay.player, tilemap) {
-            return Some(GameAction::TriggerDeath);
+        let result = gameplay::check_hazard_collision(&game.gameplay.player, tilemap, &game.gameplay.config);
+        if result.damage > 0 {
+            return Some(GameAction::TakeDamage {
+                amount: result.damage,
+                source_pos: result.position.unwrap_or(game.gameplay.player.position),
+            });
         }
     }
     None
@@ -152,7 +159,7 @@ fn update_hazards(game: &GameState) -> Option<GameAction> {
 
 /// Update enemies and check collisions
 ///
-/// Returns Some(TriggerDeath) if player died, None otherwise.
+/// Returns Some(TakeDamage) if player was hit, None otherwise.
 /// Note: Also handles enemy-killed case internally.
 fn update_enemies(game: &mut GameState, dt: f32) -> Option<GameAction> {
     // Update enemy AI
@@ -174,7 +181,12 @@ fn update_enemies(game: &mut GameState, dt: f32) -> Option<GameAction> {
     );
 
     match collision_result {
-        gameplay::EnemyCollisionResult::PlayerDied => Some(GameAction::TriggerDeath),
+        gameplay::EnemyCollisionResult::PlayerHit { damage, position, enemy_type: _ } => {
+            Some(GameAction::TakeDamage {
+                amount: damage,
+                source_pos: position,
+            })
+        }
         gameplay::EnemyCollisionResult::EnemyKilled { position, enemy_type } => {
             // Spawn defeat particles based on enemy type
             match enemy_type {

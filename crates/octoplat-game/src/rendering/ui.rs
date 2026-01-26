@@ -4,7 +4,7 @@
 //! Supports optional FLUX-generated textures with procedural fallback.
 //!
 //! Layout:
-//! - Top-left: Lives (hearts only) - clean and visible
+//! - Top-left: Lives (octopus icons) - clean and visible
 //! - Bottom-right: Gem counter, stamina, abilities - grouped together
 //! - Bottom-left: Reserved for minimap (drawn separately)
 //! - Bottom-center: Control hints
@@ -15,7 +15,7 @@ use crate::config::GameConfig;
 use crate::player::Player;
 use crate::rendering::ui_textures::HudTextures;
 
-/// Draw the HUD (gem counter, lives, and ability charges)
+/// Draw the HUD (gem counter, lives, HP, and ability charges)
 ///
 /// If hud_textures is provided, uses texture-based rendering where available.
 /// Otherwise falls back to procedural shapes.
@@ -31,8 +31,13 @@ pub fn draw_hud(
     let sh = screen_height();
     let sw = screen_width();
 
-    // === TOP-LEFT: Lives display only (clean, prominent) ===
+    // === TOP-LEFT: Lives display and HP bar (clean, prominent) ===
     draw_lives_display(lives, hud_textures);
+
+    // Draw HP bar below lives (only if max_hp > 1)
+    if player.max_hp > 1 {
+        draw_hp_bar(player, 20.0, 50.0);
+    }
 
     // === BOTTOM-RIGHT: Gem counter, stamina, abilities ===
     let bottom_panel_x = sw - 200.0;
@@ -74,12 +79,12 @@ pub fn draw_hud(
     );
 }
 
-/// Draw the lives display with heart icons
+/// Draw the lives display with octopus icons
 fn draw_lives_display(lives: u32, hud_textures: Option<&HudTextures>) {
     let start_x = 20.0;
     let y = 25.0;
-    let heart_size = 24.0; // Larger for textures
-    let heart_spacing = 28.0;
+    let icon_size = 24.0;
+    let icon_spacing = 28.0;
 
     if lives == u32::MAX {
         // Infinite lives
@@ -87,26 +92,26 @@ fn draw_lives_display(lives: u32, hud_textures: Option<&HudTextures>) {
         return;
     }
 
-    // Check if we have heart textures
-    let has_heart_texture = hud_textures
-        .and_then(|t| t.heart_full.as_ref())
+    // Check if we have life icon texture
+    let has_life_texture = hud_textures
+        .and_then(|t| t.life_icon.as_ref())
         .is_some();
 
-    // Draw hearts (max 5 displayed as icons)
-    let hearts_to_draw = lives.min(5);
-    for i in 0..hearts_to_draw {
-        let x = start_x + i as f32 * heart_spacing;
+    // Draw octopus icons (max 5 displayed as icons)
+    let icons_to_draw = lives.min(5);
+    for i in 0..icons_to_draw {
+        let x = start_x + i as f32 * icon_spacing;
 
         if let Some(textures) = hud_textures {
-            if let Some(heart_tex) = &textures.heart_full {
-                // Draw textured heart
+            if let Some(life_tex) = &textures.life_icon {
+                // Draw textured octopus
                 draw_texture_ex(
-                    heart_tex,
+                    life_tex,
                     x,
-                    y - heart_size / 2.0,
+                    y - icon_size / 2.0,
                     WHITE,
                     DrawTextureParams {
-                        dest_size: Some(vec2(heart_size, heart_size)),
+                        dest_size: Some(vec2(icon_size, icon_size)),
                         ..Default::default()
                     },
                 );
@@ -114,40 +119,102 @@ fn draw_lives_display(lives: u32, hud_textures: Option<&HudTextures>) {
             }
         }
 
-        // Fallback to procedural heart
-        draw_heart(x, y, if has_heart_texture { heart_size } else { 12.0 }, Color::new(0.9, 0.2, 0.3, 1.0));
+        // Fallback to procedural octopus
+        let octo_color = Color::new(0.85, 0.4, 0.6, 1.0); // Pink/magenta octopus
+        draw_octopus(x, y, if has_life_texture { icon_size } else { 14.0 }, octo_color);
     }
 
-    // If more than 5 lives, show "x N" after the hearts
+    // If more than 5 lives, show "x N" after the icons
     if lives > 5 {
-        let text_x = start_x + 5.0 * heart_spacing + 5.0;
+        let text_x = start_x + 5.0 * icon_spacing + 5.0;
         draw_text(
             &format!("x{}", lives),
             text_x,
             y + 5.0,
             18.0,
-            Color::new(0.9, 0.2, 0.3, 1.0),
+            Color::new(0.85, 0.4, 0.6, 1.0),
         );
     }
 }
 
-/// Draw a simple heart shape
-fn draw_heart(x: f32, y: f32, size: f32, color: Color) {
-    // Simple heart using circles and a triangle
+/// Draw a simple octopus shape (procedural fallback)
+fn draw_octopus(x: f32, y: f32, size: f32, color: Color) {
     let half = size / 2.0;
-    let quarter = size / 4.0;
+    let center_x = x + half;
+    let center_y = y;
 
-    // Two circles for the top bumps
-    draw_circle(x + quarter, y, quarter, color);
-    draw_circle(x + quarter * 3.0, y, quarter, color);
+    // Head (oval/circle)
+    let head_radius = size * 0.35;
+    draw_circle(center_x, center_y, head_radius, color);
 
-    // Triangle for the bottom point
-    draw_triangle(
-        vec2(x, y),
-        vec2(x + size, y),
-        vec2(x + half, y + size * 0.8),
-        color,
-    );
+    // Eyes (small white circles with dark pupils)
+    let eye_offset = head_radius * 0.4;
+    let eye_radius = head_radius * 0.25;
+    draw_circle(center_x - eye_offset, center_y - head_radius * 0.1, eye_radius, WHITE);
+    draw_circle(center_x + eye_offset, center_y - head_radius * 0.1, eye_radius, WHITE);
+    draw_circle(center_x - eye_offset, center_y - head_radius * 0.1, eye_radius * 0.5, Color::new(0.1, 0.1, 0.1, 1.0));
+    draw_circle(center_x + eye_offset, center_y - head_radius * 0.1, eye_radius * 0.5, Color::new(0.1, 0.1, 0.1, 1.0));
+
+    // Tentacles (wavy lines below the head)
+    let tentacle_start_y = center_y + head_radius * 0.5;
+    let tentacle_length = size * 0.4;
+    let tentacle_width = size * 0.08;
+
+    for i in 0..4 {
+        let offset = (i as f32 - 1.5) * (size * 0.18);
+        let tx = center_x + offset;
+        // Draw tentacle as small overlapping circles
+        for j in 0..4 {
+            let ty = tentacle_start_y + j as f32 * (tentacle_length / 4.0);
+            let wave = (j as f32 * 0.8).sin() * tentacle_width;
+            draw_circle(tx + wave, ty, tentacle_width, color);
+        }
+    }
+}
+
+/// Draw the HP bar with colored segments
+fn draw_hp_bar(player: &Player, x: f32, y: f32) {
+    let bar_width = 120.0;
+    let bar_height = 12.0;
+    let segment_gap = 2.0;
+
+    // Calculate segment width based on max HP
+    let max_hp = player.max_hp as f32;
+    let segment_width = (bar_width - (max_hp - 1.0) * segment_gap) / max_hp;
+
+    // Background
+    draw_rectangle(x - 2.0, y - 2.0, bar_width + 4.0, bar_height + 4.0, Color::new(0.1, 0.1, 0.15, 0.8));
+
+    // HP fraction for color
+    let hp_fraction = player.hp_fraction();
+
+    // Color based on HP level: green (>60%), yellow (30-60%), red (<30%)
+    let fill_color = if hp_fraction > 0.6 {
+        Color::new(0.3, 0.85, 0.4, 1.0)  // Green
+    } else if hp_fraction > 0.3 {
+        Color::new(0.95, 0.8, 0.2, 1.0)  // Yellow
+    } else {
+        Color::new(0.95, 0.3, 0.2, 1.0)  // Red
+    };
+
+    // Draw HP segments
+    for i in 0..player.max_hp {
+        let segment_x = x + i as f32 * (segment_width + segment_gap);
+
+        if i < player.current_hp {
+            // Filled segment
+            draw_rectangle(segment_x, y, segment_width, bar_height, fill_color);
+        } else {
+            // Empty segment
+            draw_rectangle(segment_x, y, segment_width, bar_height, Color::new(0.2, 0.2, 0.25, 0.6));
+        }
+
+        // Segment border
+        draw_rectangle_lines(segment_x, y, segment_width, bar_height, 1.0, Color::new(0.3, 0.3, 0.35, 0.8));
+    }
+
+    // HP text label
+    draw_text("HP", x, y - 3.0, 11.0, Color::new(0.7, 0.7, 0.8, 0.7));
 }
 
 /// Draw the gem counter with icon and text

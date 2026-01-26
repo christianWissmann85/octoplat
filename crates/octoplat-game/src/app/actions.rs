@@ -21,6 +21,7 @@
 use crate::app_state::AppState;
 use crate::audio::{MusicTrack, SoundId};
 use crate::procgen::{BiomeId, DifficultyPreset};
+use octoplat_core::state::GameplayDifficulty;
 
 /// Menu identifiers for menu state reset actions
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -30,6 +31,7 @@ pub enum MenuId {
     GameOver,
     Settings,
     BiomeSelect,
+    DifficultySelect,
     LevelComplete,
     Error,
     RogueLiteLeaderboard,
@@ -108,6 +110,13 @@ pub enum GameAction {
     /// Trigger player death (checks invincibility, plays effects)
     TriggerDeath,
 
+    /// Take damage from a hazard or enemy
+    /// Returns TriggerDeath if HP reaches 0
+    TakeDamage {
+        amount: u8,
+        source_pos: macroquad::prelude::Vec2,
+    },
+
     /// Respawn player at checkpoint
     Respawn,
 
@@ -164,6 +173,9 @@ pub enum GameAction {
 
     /// Complete current roguelite level and generate next
     CompleteRogueliteLevel,
+
+    /// Set gameplay difficulty - applies HP, i-frames, enemy speed, and starting lives
+    SetGameplayDifficulty(GameplayDifficulty),
 
     /// Exit roguelite mode and return to first level
     ExitRogueliteMode,

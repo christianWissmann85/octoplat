@@ -72,6 +72,9 @@ impl GameplayEngine {
             // Reset player
             self.player = Player::new(spawn, &self.config);
 
+            // Reset HP to max (uses config.player_max_hp which is set by SetGameplayDifficulty)
+            self.player.reset_hp(&self.config);
+
             // Set up level environment from tilemap
             self.level_env.setup_from_tilemap(tilemap, &self.config);
 

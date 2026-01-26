@@ -1,6 +1,7 @@
 //! Screen rendering modules
 
 pub mod biome_select;
+pub mod difficulty_select;
 pub mod error;
 pub mod game_over;
 pub mod level_complete;
@@ -12,6 +13,7 @@ pub mod settings;
 pub mod title;
 
 pub use biome_select::draw_biome_select;
+pub use difficulty_select::draw_difficulty_select;
 pub use error::draw_error_screen;
 pub use game_over::{draw_game_over, draw_roguelite_game_over};
 pub use level_complete::draw_level_complete;

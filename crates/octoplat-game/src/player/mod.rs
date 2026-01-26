@@ -122,6 +122,10 @@ pub struct Player {
     pub rope_length: f32,
     pub swing_angular_velocity: f32,
 
+    // Health
+    pub current_hp: u8,
+    pub max_hp: u8,
+
     // Visual effects
     pub visual_scale_y: f32,
     pub target_scale_y: f32,
@@ -181,6 +185,8 @@ impl Player {
             grapple_point: None,
             rope_length: 0.0,
             swing_angular_velocity: 0.0,
+            current_hp: config.player_max_hp,
+            max_hp: config.player_max_hp,
             visual_scale_y: 1.0,
             target_scale_y: 1.0,
             visual_rotation: 0.0,

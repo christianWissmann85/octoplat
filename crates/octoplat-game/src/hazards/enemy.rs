@@ -38,7 +38,7 @@ impl Crab {
         }
     }
 
-    pub fn update(&mut self, tilemap: &TileMap, _config: &GameConfig, dt: f32) {
+    pub fn update(&mut self, tilemap: &TileMap, config: &GameConfig, dt: f32) {
         if !self.alive {
             return;
         }
@@ -52,8 +52,10 @@ impl Crab {
         // Decay alert intensity when not updated externally
         self.alert_intensity = (self.alert_intensity - dt * 2.0).max(0.0);
 
+        // Apply enemy speed multiplier from difficulty settings
+        let speed_mult = config.enemy_speed_multiplier;
         let direction = if self.facing_right { 1.0 } else { -1.0 };
-        let new_x = self.position.x + direction * self.velocity * dt;
+        let new_x = self.position.x + direction * self.velocity * speed_mult * dt;
 
         // Check for wall collision
         let check_pos = vec2(
@@ -170,7 +172,9 @@ impl Pufferfish {
             return;
         }
 
-        self.phase += dt * config.pufferfish_speed;
+        // Apply enemy speed multiplier from difficulty settings
+        let speed_mult = config.enemy_speed_multiplier;
+        self.phase += dt * config.pufferfish_speed * speed_mult;
 
         // Update animation state
         self.wobble_phase += dt * 4.0;
