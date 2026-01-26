@@ -57,6 +57,10 @@ pub struct AdditionalUiTextures {
     pub game_over_background: Option<Texture2D>,
     /// Pause menu overlay/frame
     pub pause_overlay: Option<Texture2D>,
+    /// Minimap decorative frame
+    pub minimap_frame: Option<Texture2D>,
+    /// Biome name card background
+    pub biome_card: Option<Texture2D>,
 }
 
 /// Biome thumbnail textures for biome selection
@@ -140,6 +144,8 @@ impl UiTextureManager {
                 level_complete_banner: None,
                 game_over_background: None,
                 pause_overlay: None,
+                minimap_frame: None,
+                biome_card: None,
             },
             biome_thumbnails: BiomeThumbnails::new(),
             loaded: false,
@@ -179,6 +185,8 @@ impl UiTextureManager {
         self.additional.game_over_background =
             load_ui_texture("screens/game_over_background.png").await;
         self.additional.pause_overlay = load_ui_texture("screens/pause_overlay.png").await;
+        self.additional.minimap_frame = load_ui_texture("hud/minimap_frame.png").await;
+        self.additional.biome_card = load_ui_texture("hud/biome_card.png").await;
 
         // Biome thumbnails
         self.load_biome_thumbnails().await;

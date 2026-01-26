@@ -185,6 +185,17 @@ impl Player {
         destroyed_blocks: &HashSet<(usize, usize)>,
         crumbling_platform_rects: &[Rect],
     ) {
+        #[cfg(debug_assertions)]
+        static FRAME_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+        #[cfg(debug_assertions)]
+        let frame = FRAME_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        #[cfg(debug_assertions)]
+        let start_state = self.state;
+        #[cfg(debug_assertions)]
+        let start_pos = self.position;
+        #[cfg(debug_assertions)]
+        let start_vel = self.velocity;
+
         let pos_core = vec2_from_mq(self.position);
 
         // Collect nearby collision tiles (using into_iter avoids intermediate allocation)
@@ -202,6 +213,12 @@ impl Player {
             || self.check_oneway_ground(&oneway_tiles)
             || check_ground(player_rect, crumbling_platform_rects);
         let wall_dir = check_wall(player_rect, &nearby_tiles);
+
+        #[cfg(debug_assertions)]
+        eprintln!(
+            "\n[FRAME {}] START: state={:?}, pos=({:.2},{:.2}), vel=({:.2},{:.2}), on_ground={}, dt={:.4}",
+            frame, start_state, start_pos.x, start_pos.y, start_vel.x, start_vel.y, on_ground, dt
+        );
 
         // === 2. Update Timers ===
         self.update_timers(on_ground, config, dt);
@@ -221,6 +238,12 @@ impl Player {
 
         // === 6. Apply Physics Based on State ===
         self.apply_state_physics(input, config, dt);
+
+        #[cfg(debug_assertions)]
+        eprintln!(
+            "[FRAME {}] POST-PHYSICS: vel=({:.2},{:.2}), state={:?}",
+            frame, self.velocity.x, self.velocity.y, self.state
+        );
 
         // === 7. Variable Jump Height ===
         if self.state == PlayerState::Jumping && input.jump_released && self.velocity.y < 0.0 {
@@ -265,6 +288,17 @@ impl Player {
                 "velocity.y exceeded sanity limit: {}",
                 self.velocity.y
             );
+
+            // End of frame summary - only log if state changed or significant movement
+            let state_changed = self.state != start_state;
+            let pos_changed = (self.position - start_pos).length() > 0.01;
+            if state_changed || pos_changed {
+                eprintln!(
+                    "[FRAME {}] END: state={:?}, pos=({:.2},{:.2}), vel=({:.2},{:.2}){}",
+                    frame, self.state, self.position.x, self.position.y, self.velocity.x, self.velocity.y,
+                    if state_changed { " [STATE CHANGED]" } else { "" }
+                );
+            }
         }
     }
 }

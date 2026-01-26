@@ -15,9 +15,10 @@ use super::PlayerState;
 impl Player {
     /// Resolve horizontal collision with solid tiles
     pub(super) fn resolve_horizontal_collision(&mut self, tiles: &[Rect], config: &GameConfig) {
-        let player_rect = self.collision_rect();
-
+        // Must recalculate player_rect after each resolution to avoid double-pushing
+        // when player straddles multiple tiles at a boundary
         for tile in tiles {
+            let player_rect = self.collision_rect();
             let collision = aabb_collision(player_rect, *tile);
             if collision.collided && collision.normal.x.abs() > 0.5 {
                 // Try corner correction if penetration is small enough
@@ -43,11 +44,17 @@ impl Player {
 
     /// Resolve vertical collision with solid tiles
     pub(super) fn resolve_vertical_collision(&mut self, tiles: &[Rect], config: &GameConfig) {
-        let player_rect = self.collision_rect();
-
+        // Must recalculate player_rect after each resolution to avoid double-pushing
+        // when player straddles multiple tiles at a boundary
         for tile in tiles {
+            let player_rect = self.collision_rect();
             let collision = aabb_collision(player_rect, *tile);
             if collision.collided && collision.normal.y.abs() > 0.5 {
+                #[cfg(debug_assertions)]
+                let pre_pos = self.position;
+                #[cfg(debug_assertions)]
+                let pre_vel = self.velocity;
+
                 // Try corner correction if penetration is small enough
                 if collision.penetration <= config.corner_correction_threshold {
                     if let Some(nudge) = self.try_corner_correction_horizontal(tiles, config) {
@@ -70,6 +77,14 @@ impl Player {
                 } else {
                     self.velocity.y = self.velocity.y.max(0.0);
                 }
+
+                #[cfg(debug_assertions)]
+                eprintln!(
+                    "[VCOL] tile=({:.1},{:.1}), normal.y={:.1}, pen={:.2}, pos: ({:.2},{:.2})->({:.2},{:.2}), vel.y: {:.2}->{:.2}",
+                    tile.x, tile.y, collision.normal.y, collision.penetration,
+                    pre_pos.x, pre_pos.y, self.position.x, self.position.y,
+                    pre_vel.y, self.velocity.y
+                );
             }
         }
     }
@@ -208,8 +223,17 @@ impl Player {
                 let tile_right = tile.x + tile.w;
 
                 if player_rect.x < tile_right && player_right > tile.x {
+                    #[cfg(debug_assertions)]
+                    let pre_pos_y = self.position.y;
+
                     self.position.y = tile_top - player_rect.h / 2.0;
                     self.velocity.y = 0.0;
+
+                    #[cfg(debug_assertions)]
+                    eprintln!(
+                        "[ONEWAY] tile_top={:.2}, player_h={:.2}, pos.y: {:.2}->{:.2}",
+                        tile_top, player_rect.h, pre_pos_y, self.position.y
+                    );
                 }
             }
         }

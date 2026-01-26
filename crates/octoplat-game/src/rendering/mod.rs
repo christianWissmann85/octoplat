@@ -83,7 +83,7 @@ pub use decoration_textures::{
 
 // Re-export tile texture system
 pub use tile_textures::{
-    TileTextureManager, TextureQuality, draw_tile_texture, draw_platform_texture,
+    TileTextureManager, TextureQuality, draw_tile_texture, draw_platform_texture, draw_spike_texture,
 };
 
 // Re-export UI texture system

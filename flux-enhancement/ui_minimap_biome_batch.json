@@ -1,0 +1,21 @@
+{
+  "output_dir": "/home/chris/octoplat/assets/ui",
+  "assets": [
+    {
+      "name": "minimap_frame",
+      "subdir": "hud",
+      "prompt": "<lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5> decorative nautical map frame border, ornate seashell corner decorations, rope and anchor motifs, aged parchment texture around edges, underwater treasure map theme, elegant 2D game UI minimap frame, transparent center opening, teal and gold accents, hand-drawn stylized cartoon illustration, single object, centered, white background",
+      "width": 256,
+      "height": 192,
+      "remove_bg": true
+    },
+    {
+      "name": "biome_card",
+      "subdir": "hud",
+      "prompt": "<lora:ghibli-style-flux:0.5><lora:cartoon-flux:0.5> decorative underwater banner card frame, seashell and coral border decorations, elegant notification panel, bioluminescent glow accents, semi-transparent blue-green center area for text overlay, beautiful oceanic 2D game UI element, hand-drawn stylized cartoon illustration, single object, centered, white background",
+      "width": 400,
+      "height": 100,
+      "remove_bg": true
+    }
+  ]
+}

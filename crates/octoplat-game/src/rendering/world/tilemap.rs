@@ -7,7 +7,7 @@ use octoplat_core::level::{TileMap, TileType};
 use octoplat_core::procgen::BiomeTheme;
 
 use crate::compat::ToMqColor;
-use crate::rendering::tile_textures::draw_platform_texture;
+use crate::rendering::tile_textures::{draw_platform_texture, draw_spike_texture};
 
 /// Draw the tilemap
 pub fn draw_tilemap(tilemap: &TileMap, destroyed_blocks: &HashSet<(usize, usize)>) {
@@ -127,12 +127,14 @@ pub fn draw_tilemap(tilemap: &TileMap, destroyed_blocks: &HashSet<(usize, usize)
 ///
 /// If a tile texture is provided, it will be applied as an overlay on solid blocks
 /// and platforms using multiply blending.
+/// If a spike texture is provided, spikes will be rendered with that texture.
 pub fn draw_tilemap_themed(
     tilemap: &TileMap,
     destroyed_blocks: &HashSet<(usize, usize)>,
     theme: &BiomeTheme,
     time: f32,
     tile_texture: Option<&Texture2D>,
+    spike_texture: Option<&Texture2D>,
 ) {
     use crate::rendering::autotile;
     use crate::rendering::geometry;
@@ -153,28 +155,34 @@ pub fn draw_tilemap_themed(
 
                 match tile {
                     TileType::Spike => {
-                        // Draw spike with biome hazard color
                         let core_color = theme.hazard_color;
                         let spike_color = core_color.to_mq_color();
-                        draw_triangle(
-                            vec2(px + 2.0, py + size),
-                            vec2(px + size - 2.0, py + size),
-                            vec2(px + size / 2.0, py + 4.0),
-                            spike_color,
-                        );
-                        // Highlight
-                        let highlight = Color::new(
-                            (core_color.r * 1.3).min(1.0),
-                            (core_color.g * 1.3).min(1.0),
-                            (core_color.b * 1.3).min(1.0),
-                            0.6,
-                        );
-                        draw_triangle(
-                            vec2(px + size / 2.0 - 4.0, py + size - 4.0),
-                            vec2(px + size / 2.0, py + 8.0),
-                            vec2(px + size / 2.0 + 2.0, py + size - 6.0),
-                            highlight,
-                        );
+
+                        // Use texture if available, otherwise procedural
+                        if let Some(tex) = spike_texture {
+                            draw_spike_texture(tex, px, py, size, spike_color);
+                        } else {
+                            // Procedural spike (triangle pointing up)
+                            draw_triangle(
+                                vec2(px + 2.0, py + size),
+                                vec2(px + size - 2.0, py + size),
+                                vec2(px + size / 2.0, py + 4.0),
+                                spike_color,
+                            );
+                            // Highlight
+                            let highlight = Color::new(
+                                (core_color.r * 1.3).min(1.0),
+                                (core_color.g * 1.3).min(1.0),
+                                (core_color.b * 1.3).min(1.0),
+                                0.6,
+                            );
+                            draw_triangle(
+                                vec2(px + size / 2.0 - 4.0, py + size - 4.0),
+                                vec2(px + size / 2.0, py + 8.0),
+                                vec2(px + size / 2.0 + 2.0, py + size - 6.0),
+                                highlight,
+                            );
+                        }
                     }
                     TileType::OneWay => {
                         // Draw one-way platform with biome platform color

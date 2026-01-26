@@ -73,7 +73,33 @@ pub fn check_ground(player_rect: Rect, tiles: &[Rect]) -> bool {
         h: 2.0,
     };
 
-    tiles.iter().any(|tile| ground_check.overlaps(tile))
+    let result = tiles.iter().any(|tile| ground_check.overlaps(tile));
+
+    #[cfg(debug_assertions)]
+    {
+        // Only log when ground state might be interesting (near tiles)
+        if !tiles.is_empty() {
+            let nearest_tile = tiles.iter()
+                .min_by(|a, b| {
+                    let dist_a = (a.y - (player_rect.y + player_rect.h)).abs();
+                    let dist_b = (b.y - (player_rect.y + player_rect.h)).abs();
+                    dist_a.partial_cmp(&dist_b).unwrap()
+                });
+            if let Some(tile) = nearest_tile {
+                let gap = tile.y - (player_rect.y + player_rect.h);
+                // Only log if we're close to ground (within 10 pixels)
+                if gap.abs() < 10.0 {
+                    eprintln!(
+                        "[GROUND] check={}, player_bottom={:.2}, nearest_tile_top={:.2}, gap={:.2}, check_rect=({:.2},{:.2},{:.2},{:.2})",
+                        result, player_rect.y + player_rect.h, tile.y, gap,
+                        ground_check.x, ground_check.y, ground_check.w, ground_check.h
+                    );
+                }
+            }
+        }
+    }
+
+    result
 }
 
 /// Check for wall contact (left or right)

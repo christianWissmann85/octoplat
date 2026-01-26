@@ -9,7 +9,7 @@ use crate::level::LevelEnvironment;
 use crate::player::Player;
 use octoplat_core::level::{TileMap, TileType};
 
-/// Draw the minimap in the top-right corner of the screen
+/// Draw the minimap in the bottom-left corner of the screen
 pub fn draw_minimap(
     tilemap: &TileMap,
     player: &Player,
@@ -18,19 +18,25 @@ pub fn draw_minimap(
     minimap_scale: f32,
     minimap_opacity: f32,
     time: f32,
+    frame_texture: Option<&Texture2D>,
 ) {
     let minimap_width = minimap_size;
     let minimap_height = minimap_size * 0.75; // 4:3 aspect ratio
     let scale = minimap_scale;
     let opacity = minimap_opacity;
 
-    // Position in top-right, below the ability charges
+    // Position in bottom-left corner (away from HUD elements)
     let margin = 10.0;
-    let minimap_x = screen_width() - minimap_width - margin;
-    let minimap_y = 85.0; // Below jet/ink charges
+    let minimap_x = margin;
+    let minimap_y = screen_height() - minimap_height - margin - 25.0; // Leave room for hint text
 
-    // Draw background with oceanic tint
-    draw_minimap_background(minimap_x, minimap_y, minimap_width, minimap_height, opacity);
+    // Draw frame texture behind (if available) or procedural background
+    if let Some(frame) = frame_texture {
+        draw_minimap_frame_texture(frame, minimap_x, minimap_y, minimap_width, minimap_height, opacity);
+    } else {
+        // Draw background with oceanic tint
+        draw_minimap_background(minimap_x, minimap_y, minimap_width, minimap_height, opacity);
+    }
 
     // Calculate world viewport (centered on player)
     let tiles_visible_x = minimap_width / scale;
@@ -103,8 +109,10 @@ pub fn draw_minimap(
         time,
     );
 
-    // Draw border
-    draw_minimap_border(minimap_x, minimap_y, minimap_width, minimap_height);
+    // Draw border (only if no frame texture)
+    if frame_texture.is_none() {
+        draw_minimap_border(minimap_x, minimap_y, minimap_width, minimap_height);
+    }
 
     // Draw toggle hint
     draw_minimap_hint(minimap_x, minimap_y + minimap_height + 2.0);
@@ -119,6 +127,44 @@ fn draw_minimap_background(x: f32, y: f32, width: f32, height: f32, opacity: f32
         width,
         height,
         Color::new(0.05, 0.12, 0.18, opacity),
+    );
+}
+
+/// Draw the minimap with a textured frame
+fn draw_minimap_frame_texture(
+    texture: &Texture2D,
+    x: f32,
+    y: f32,
+    width: f32,
+    height: f32,
+    opacity: f32,
+) {
+    // The frame texture should be slightly larger than the map area to include decorative border
+    let frame_padding = 8.0;
+    let frame_x = x - frame_padding;
+    let frame_y = y - frame_padding;
+    let frame_w = width + frame_padding * 2.0;
+    let frame_h = height + frame_padding * 2.0;
+
+    // Draw frame texture with opacity
+    draw_texture_ex(
+        texture,
+        frame_x,
+        frame_y,
+        Color::new(1.0, 1.0, 1.0, opacity),
+        DrawTextureParams {
+            dest_size: Some(vec2(frame_w, frame_h)),
+            ..Default::default()
+        },
+    );
+
+    // Draw dark background inside the frame for map content
+    draw_rectangle(
+        x,
+        y,
+        width,
+        height,
+        Color::new(0.03, 0.08, 0.12, opacity * 0.9),
     );
 }
 

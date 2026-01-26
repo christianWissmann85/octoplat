@@ -77,6 +77,25 @@ impl TileTextureAssets {
     }
 }
 
+/// Embedded hazard texture assets (spike textures)
+#[derive(RustEmbed)]
+#[folder = "../../assets/textures/hazards/"]
+pub struct HazardTextureAssets;
+
+impl HazardTextureAssets {
+    /// Get an embedded hazard texture by path
+    /// Path should be relative to assets/textures/hazards/ (e.g., "spike.png")
+    /// Returns the image data as owned bytes
+    pub fn get_texture(path: &str) -> Option<Cow<'static, [u8]>> {
+        Self::get(path).map(|file| file.data)
+    }
+
+    /// Check if a hazard texture exists
+    pub fn has_texture(path: &str) -> bool {
+        Self::get(path).is_some()
+    }
+}
+
 /// Embedded UI assets (loading screen, title screen, menus)
 #[derive(RustEmbed)]
 #[folder = "../../assets/ui/"]

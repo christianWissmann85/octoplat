@@ -426,7 +426,8 @@ pub fn render(game: &GameState, time: f32) {
         if let Some(theme) = active_theme {
             let current_biome = game.progression.roguelite.biome_progression.current().id;
             let tile_texture = game.level.tile_textures.get(current_biome);
-            rendering::draw_tilemap_themed(tilemap, &game.gameplay.level_env.destroyed_blocks, theme, time, tile_texture);
+            let spike_texture = game.level.tile_textures.get_spike();
+            rendering::draw_tilemap_themed(tilemap, &game.gameplay.level_env.destroyed_blocks, theme, time, tile_texture, spike_texture);
         } else {
             rendering::draw_tilemap(tilemap, &game.gameplay.level_env.destroyed_blocks);
         }
@@ -547,22 +548,14 @@ pub fn render(game: &GameState, time: f32) {
                 game.progression.save_manager.data.minimap_scale,
                 game.progression.save_manager.data.minimap_opacity,
                 time,
+                game.level.ui_textures.additional.minimap_frame.as_ref(),
             );
         }
     }
 
-    // Draw level name when starting
+    // Draw biome name card when starting level
     if game.gameplay.level_env.show_level_text > 0.0 && game.gameplay.level_env.show_level_text < 3.0 {
-        let alpha = (game.gameplay.level_env.show_level_text / 2.0).min(1.0);
-        let level_name = game.level.manager.level_name();
-        let text_width = measure_text(level_name, None, 48, 1.0).width;
-        draw_text(
-            level_name,
-            (screen_width() - text_width) / 2.0,
-            screen_height() / 3.0,
-            48.0,
-            Color::new(1.0, 1.0, 1.0, alpha),
-        );
+        draw_biome_name_card(game, time);
     }
 
     // Draw level complete text
@@ -732,4 +725,128 @@ fn render_seed_input(game: &GameState) {
 
     // Instructions
     draw_text("Enter=Confirm  Esc=Cancel", box_x + 20.0, box_y + 85.0, 14.0, Color::new(0.6, 0.7, 0.8, 0.8));
+}
+
+/// Draw the biome name card when entering a level
+fn draw_biome_name_card(game: &GameState, time: f32) {
+    let show_time = game.gameplay.level_env.show_level_text;
+
+    // Calculate alpha with smooth fade in/out
+    // Fade in for first 0.5s, hold for 1.5s, fade out for last 1s
+    let alpha = if show_time > 2.5 {
+        (3.0 - show_time) / 0.5 // Fade in
+    } else if show_time > 1.0 {
+        1.0 // Hold
+    } else {
+        show_time // Fade out
+    };
+
+    let sw = screen_width();
+    let sh = screen_height();
+
+    // Card dimensions
+    let card_w = 400.0;
+    let card_h = 100.0;
+    let card_x = (sw - card_w) / 2.0;
+    let card_y = sh * 0.25;
+
+    // Slide-in effect during fade-in
+    let slide_offset = if show_time > 2.5 {
+        (3.0 - show_time) / 0.5 * -20.0 + 20.0
+    } else {
+        0.0
+    };
+    let card_y = card_y + slide_offset;
+
+    // Get biome info
+    let biome = game.progression.roguelite.biome_progression.current();
+    let biome_name = biome.name;
+    // Use solid_color as the representative biome color
+    let core_color = biome.theme.solid_color;
+    let biome_color = Color::new(core_color.r, core_color.g, core_color.b, 1.0);
+    let level_name = game.level.manager.level_name();
+
+    // Draw card background with texture or procedural
+    if let Some(card_texture) = game.level.ui_textures.additional.biome_card.as_ref() {
+        draw_texture_ex(
+            card_texture,
+            card_x,
+            card_y,
+            Color::new(1.0, 1.0, 1.0, alpha),
+            DrawTextureParams {
+                dest_size: Some(vec2(card_w, card_h)),
+                ..Default::default()
+            },
+        );
+    } else {
+        // Procedural card background
+        // Outer glow
+        draw_rectangle(
+            card_x - 4.0,
+            card_y - 4.0,
+            card_w + 8.0,
+            card_h + 8.0,
+            Color::new(biome_color.r, biome_color.g, biome_color.b, alpha * 0.3),
+        );
+
+        // Main card background
+        draw_rectangle(
+            card_x,
+            card_y,
+            card_w,
+            card_h,
+            Color::new(0.05, 0.1, 0.15, alpha * 0.9),
+        );
+
+        // Border with biome color
+        draw_rectangle_lines(
+            card_x,
+            card_y,
+            card_w,
+            card_h,
+            3.0,
+            Color::new(biome_color.r, biome_color.g, biome_color.b, alpha * 0.8),
+        );
+
+        // Inner highlight line
+        draw_rectangle(
+            card_x + 3.0,
+            card_y + 3.0,
+            card_w - 6.0,
+            2.0,
+            Color::new(1.0, 1.0, 1.0, alpha * 0.2),
+        );
+    }
+
+    // Draw biome name (large, centered)
+    let biome_text_size = 36.0;
+    let biome_text_dims = measure_text(biome_name, None, biome_text_size as u16, 1.0);
+    draw_text(
+        biome_name,
+        card_x + (card_w - biome_text_dims.width) / 2.0,
+        card_y + 40.0,
+        biome_text_size,
+        Color::new(biome_color.r, biome_color.g, biome_color.b, alpha),
+    );
+
+    // Draw level name (smaller, below)
+    let level_text_size = 18.0;
+    let level_text_dims = measure_text(level_name, None, level_text_size as u16, 1.0);
+    draw_text(
+        level_name,
+        card_x + (card_w - level_text_dims.width) / 2.0,
+        card_y + 70.0,
+        level_text_size,
+        Color::new(0.7, 0.8, 0.9, alpha * 0.8),
+    );
+
+    // Add subtle animated sparkles
+    let sparkle_count = 3;
+    for i in 0..sparkle_count {
+        let offset = i as f32 * 2.1;
+        let sparkle_x = card_x + 30.0 + i as f32 * (card_w - 60.0) / (sparkle_count - 1) as f32;
+        let sparkle_y = card_y + 85.0 + (time * 2.0 + offset).sin() * 3.0;
+        let sparkle_alpha = ((time * 3.0 + offset).sin() * 0.5 + 0.5) * alpha;
+        draw_circle(sparkle_x, sparkle_y, 2.0, Color::new(1.0, 1.0, 1.0, sparkle_alpha * 0.6));
+    }
 }

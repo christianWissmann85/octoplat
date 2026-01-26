@@ -173,6 +173,11 @@ impl Player {
         }
 
         if !on_ground {
+            #[cfg(debug_assertions)]
+            eprintln!(
+                "[STATE] Grounded->Falling: on_ground={}, pos=({:.2},{:.2}), vel=({:.2},{:.2})",
+                on_ground, self.position.x, self.position.y, self.velocity.x, self.velocity.y
+            );
             self.state = PlayerState::Falling;
         } else if wants_jump {
             self.execute_jump(config);
@@ -202,11 +207,17 @@ impl Player {
             self.execute_jump(config);
             input.consume_jump_buffer();
         } else if on_ground && self.velocity.y >= 0.0 {
-            self.state = if input.move_dir.x.abs() > config.input_deadzone {
+            let new_state = if input.move_dir.x.abs() > config.input_deadzone {
                 PlayerState::Running
             } else {
                 PlayerState::Idle
             };
+            #[cfg(debug_assertions)]
+            eprintln!(
+                "[STATE] Airborne->Grounded: on_ground={}, vel.y={:.2}, pos=({:.2},{:.2}), new_state={:?}",
+                on_ground, self.velocity.y, self.position.x, self.position.y, new_state
+            );
+            self.state = new_state;
             if wants_jump {
                 self.execute_jump(config);
                 input.consume_jump_buffer();

@@ -218,7 +218,7 @@
 
 ---
 
-## Phase 5: UI Polish
+## ✅ Phase 5: UI Polish [COMPLETE]
 
 **Objective:** Upgrade menus and HUD with illustrated elements.
 
@@ -250,17 +250,18 @@
 - [x] Process: Remove backgrounds, make transparent
 - [x] Integrate replacing procedural shapes
 
-### 5.4 Additional UI
+### 5.4 Additional UI [COMPLETE]
 - [x] **FLUX Generate:** Level complete banner
 - [x] **FLUX Generate:** Game over screen
 - [x] **FLUX Generate:** Pause menu overlay
-- [ ] Design and implement improved minimap frame
-- [ ] Add biome name cards on entry
+- [x] Design and implement improved minimap frame
+- [x] Add biome name cards on entry
+- [x] Reorganized HUD layout (lives top-left, abilities bottom-right, minimap bottom-left)
 
-### 5.5 HAZARDS 
-- [ ] **FLUX Generate:** Spikey Hazard
-- [ ] Design and implement improved Spikey Hazard
-- [ ] Integrate replacing procedural shapes
+### 5.5 HAZARDS [COMPLETE]
+- [x] **FLUX Generate:** Spikey Hazard
+- [x] Design and implement improved Spikey Hazard
+- [x] Integrate replacing procedural shapes
 
 ---
 
@@ -269,7 +270,6 @@
 **Objective:** Add polish through particles, screen effects, and feedback.
 
 ### 6.1 Particle System Expansion
-- [ ] Add splash particles (water entry/exit)
 - [ ] Add ink cloud particles (ability use)
 - [ ] Add jet boost flame particles
 - [ ] Add gem collection sparkles
@@ -378,7 +378,7 @@ assets/
 - **Notes:**
 
 ### Phase 5: UI Polish
-- **Status:** In Progress (5.1, 5.2, 5.3, 5.4 Partially Complete)
+- **Status:** COMPLETE
 - **Blockers:** None
 - **Notes:**
   - 5.1 Title Screen complete: loading screen, title screen backgrounds, octopus mascot, logo
@@ -390,9 +390,13 @@ assets/
   - 5.3 HUD Elements complete: heart icons, gem icon, stamina frame, jet/ink ability icons
   - Extended UiTextureManager with HudTextures struct
   - All HUD elements have transparent backgrounds and graceful fallback
-  - 5.4 Additional UI partially complete: level complete banner, game over background, pause overlay
-  - Extended UiTextureManager with AdditionalUiTextures struct
-  - Remaining: minimap frame, biome name cards on entry
+  - 5.4 Additional UI complete: level complete banner, game over background, pause overlay
+  - Extended UiTextureManager with AdditionalUiTextures struct (minimap_frame, biome_card)
+  - Biome name card displays on level entry with animated fade-in/out and biome colors
+  - HUD layout reorganized: lives top-left, abilities/gems bottom-right, minimap bottom-left
+  - 5.5 Hazards complete: spike texture generated with FLUX, integrated into tilemap rendering
+  - Added HazardTextureAssets for spike texture loading
+  - Spike textures tinted per-biome using hazard_color from BiomeTheme
 
 ### Phase 6: Juice & Effects
 - **Status:** Not Started
