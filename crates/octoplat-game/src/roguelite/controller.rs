@@ -122,6 +122,7 @@ pub fn complete_level(run: &mut RogueliteRun, gems_collected: u32) -> bool {
 
     // Advance biome progression
     let advanced_biome = run.biome_progression.advance_level();
+    #[cfg(debug_assertions)]
     let current_biome = run.biome_progression.current();
 
     #[cfg(debug_assertions)]

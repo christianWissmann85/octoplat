@@ -64,58 +64,59 @@ impl ProcgenManager {
 
     /// Load handcrafted levels from embedded roguelite assets
     ///
-    /// Loads levels from `assets/roguelite/<biome>/<archetype>/` embedded in the binary.
+    /// Loads segments from `assets/roguelite/ocean_depths/<archetype>/` and registers
+    /// them for ALL biomes. Visual theming comes from the biome theme, not the segments.
     /// Returns the number of levels loaded.
     pub fn load_archetype_pool(&mut self, _assets_path: &str) -> Result<usize, ProcgenError> {
         let mut pool = ArchetypePool::new();
 
+        // All biomes use the same segment pool (visual theming comes from BiomeTheme)
+        let all_biomes = BiomeId::all();
+
         // Iterate through all embedded files
         for file_path in RogueliteAssets::iter() {
-            // Only process .txt files
-            if !file_path.ends_with(".txt") {
+            // Only process .txt files from ocean_depths (our canonical segment source)
+            if !file_path.ends_with(".txt") || !file_path.starts_with("ocean_depths/") {
                 continue;
             }
 
-            // Parse the path: <biome>/<archetype>/<filename>.txt
+            // Parse the path: ocean_depths/<archetype>/<filename>.txt
             let path_parts: Vec<&str> = file_path.split('/').collect();
             if path_parts.len() != 3 {
                 continue;
             }
 
-            let biome_str = path_parts[0];
             let archetype_str = path_parts[1];
             let filename = path_parts[2];
 
-            // Parse biome and archetype from path
-            let biome = BiomeId::parse(biome_str);
-            let archetype = LevelArchetype::parse(archetype_str);
-
-            if biome.is_none() || archetype.is_none() {
-                continue;
-            }
-
-            let biome = biome.unwrap();
-            let archetype = archetype.unwrap();
+            // Parse archetype from path
+            let archetype = match LevelArchetype::parse(archetype_str) {
+                Some(a) => a,
+                None => continue,
+            };
 
             // Get the embedded file content
             if let Some(file) = RogueliteAssets::get(&file_path) {
                 if let Ok(content) = std::str::from_utf8(file.data.as_ref()) {
                     if let Ok(level_data) = LevelData::parse(content, 32.0) {
-                        let id = filename
+                        let base_id = filename
                             .strip_suffix(".txt")
                             .unwrap_or("unknown")
                             .to_string();
 
-                        let pooled = PooledLevel {
-                            content: content.to_string(),
-                            archetype: level_data.archetype.unwrap_or(archetype),
-                            biome: level_data.biome.unwrap_or(biome),
-                            difficulty_tier: level_data.difficulty_tier.unwrap_or(2),
-                            id,
-                            name: level_data.name,
-                        };
+                        // Register this segment for ALL biomes
+                        for &biome in all_biomes {
+                            let pooled = PooledLevel {
+                                content: content.to_string(),
+                                archetype: level_data.archetype.unwrap_or(archetype),
+                                biome,
+                                difficulty_tier: level_data.difficulty_tier.unwrap_or(2),
+                                id: format!("{}_{}", biome.as_str(), base_id),
+                                name: level_data.name.clone(),
+                            };
 
-                        pool.add_level(pooled);
+                            pool.add_level(pooled);
+                        }
                     }
                 }
             }
@@ -123,7 +124,8 @@ impl ProcgenManager {
 
         let count = pool.level_count();
         #[cfg(debug_assertions)]
-        println!("Loaded {} levels into archetype pool", count);
+        println!("Loaded {} levels into archetype pool ({} segments x {} biomes)",
+                 count, count / all_biomes.len().max(1), all_biomes.len());
         self.archetype_pool = Some(pool);
         Ok(count)
     }
@@ -203,10 +205,12 @@ impl ProcgenManager {
         let level_idx = rng.range_usize(0, candidates.len());
         let selected = candidates[level_idx];
 
-        // Mark as used (need mutable access)
+        // Mark as used (need mutable access) - clone values before mutable borrow
         let selected_id = selected.id.clone();
         let selected_content = selected.content.clone();
+        #[cfg(debug_assertions)]
         let selected_name = selected.name.clone();
+        #[cfg(debug_assertions)]
         let selected_archetype = selected.archetype;
 
         if let Some(pool) = &mut self.archetype_pool {
@@ -552,28 +556,16 @@ impl ProcgenManager {
         })
     }
 
-    /// Generate a roguelite level - tries single archetype first, falls back to linked segments
+    /// Generate a roguelite level using linked segments for large, varied levels
     pub fn generate_roguelite_level(
         &mut self,
         biome: BiomeId,
         preset: DifficultyPreset,
         level_index: u32,
-        is_boss_level: bool,
+        _is_boss_level: bool,
         seed: u64,
     ) -> Result<GeneratedLevel, ProcgenError> {
-        // Try single archetype level first (faster, simpler)
-        if self.has_archetype_pool() {
-            match self.generate_archetype_level(biome, preset, level_index, is_boss_level, seed) {
-                Ok(level) => return Ok(level),
-                Err(e) => {
-                    #[cfg(debug_assertions)]
-                    println!("Single archetype generation failed ({}), trying linked segments", e);
-                    let _ = e;
-                }
-            }
-        }
-
-        // Fall back to linked segments (more variety, larger levels)
+        // Always use linked segments for multi-segment levels (6-24 segments)
         // Scale segment count with level progression for longer, more interesting levels
         let segment_count = match preset {
             DifficultyPreset::Casual => 6 + (level_index as usize / 3).min(6),      // 6-12

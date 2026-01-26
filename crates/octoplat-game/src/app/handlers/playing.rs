@@ -14,6 +14,7 @@
 //! - `update_level_progress` - exit detection, level complete, fall death
 //! - `update_effects` - particles and shader effects
 
+#[cfg(debug_assertions)]
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use macroquad::prelude::*;

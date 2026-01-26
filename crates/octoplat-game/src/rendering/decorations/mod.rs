@@ -18,6 +18,7 @@ mod sunken_ruins;
 mod tropical_shore;
 mod volcanic_vents;
 
+#[cfg(debug_assertions)]
 use std::sync::atomic::{AtomicI32, Ordering};
 
 use macroquad::prelude::*;
