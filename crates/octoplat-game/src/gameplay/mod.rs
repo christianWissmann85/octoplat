@@ -10,7 +10,7 @@ pub mod physics;
 pub use engine::GameplayEngine;
 pub use collision::{
     check_breakable_blocks, check_enemy_collision, check_fall_death, check_hazard_collision,
-    EnemyCollisionResult,
+    EnemyCollisionResult, EnemyType,
 };
 pub use feedback::{process_feedback, FeedbackResult};
 pub use physics::*;

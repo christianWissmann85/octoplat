@@ -16,4 +16,10 @@ pub use screens::{
     draw_loading_screen, draw_main_menu, draw_pause_menu, draw_roguelite_game_over,
     draw_roguelite_leaderboard, draw_settings, draw_title_screen,
 };
-pub use transitions::{draw_fade_overlay, Transition};
+pub use transitions::{
+    draw_fade_overlay, Transition,
+    DeathTransition, DeathTransitionPhase,
+    LevelTransition, LevelTransitionDirection,
+    MenuSlideTransition, SlideDirection,
+    BiomeTransition,
+};

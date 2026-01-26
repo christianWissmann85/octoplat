@@ -25,7 +25,7 @@ use crate::procgen::ProcgenManager;
 use crate::progression::ProgressionManager;
 use crate::rendering::{BiomeBackground, ParallaxBackground, BackgroundTextureManager, DecorationTextureManager, TileTextureManager, UiTextureManager};
 use crate::state::StateController;
-use crate::ui::GameMenus;
+use crate::ui::{GameMenus, DeathTransition, LevelTransition, LevelTransitionDirection, MenuSlideTransition, SlideDirection, BiomeTransition};
 
 // ============================================================================
 // UIState - Menu and UI-related state
@@ -77,6 +77,14 @@ pub struct UIState {
     pub seed_input: SeedInputState,
     /// Cached HUD strings to avoid per-frame format! allocations
     pub hud_cache: HudStringCache,
+    /// Death/respawn transition effect
+    pub death_transition: DeathTransition,
+    /// Level transition effect (dive/surface)
+    pub level_transition: Option<LevelTransition>,
+    /// Menu slide transition effect
+    pub menu_transition: Option<MenuSlideTransition>,
+    /// Biome transition effect (entering new biome)
+    pub biome_transition: Option<BiomeTransition>,
 }
 
 impl UIState {
@@ -86,7 +94,26 @@ impl UIState {
             minimap_visible: minimap_default_visible,
             seed_input: SeedInputState::new(),
             hud_cache: HudStringCache::new(),
+            death_transition: DeathTransition::new(),
+            level_transition: None,
+            menu_transition: None,
+            biome_transition: None,
         }
+    }
+
+    /// Start a menu slide transition
+    pub fn start_menu_transition(&mut self, direction: SlideDirection) {
+        self.menu_transition = Some(MenuSlideTransition::new(direction, 0.4));
+    }
+
+    /// Start a biome transition effect
+    pub fn start_biome_transition(&mut self, biome: BiomeId) {
+        self.biome_transition = Some(BiomeTransition::new(biome, 2.5));
+    }
+
+    /// Start a level transition (dive = going deeper, surface = going up)
+    pub fn start_level_transition(&mut self, direction: LevelTransitionDirection) {
+        self.level_transition = Some(LevelTransition::new(direction, 1.0));
     }
 }
 
@@ -246,6 +273,9 @@ impl GameState {
             // Trigger chromatic aberration effect centered on screen
             let screen_center = vec2(screen_width() / 2.0, screen_height() / 2.0);
             self.fx.trigger_chromatic_hit(screen_center, 0.8);
+
+            // Start the death transition effect
+            self.ui.death_transition.start(self.gameplay.player.position);
         }
     }
 

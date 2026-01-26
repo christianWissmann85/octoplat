@@ -10,6 +10,35 @@
 
 use macroquad::prelude::*;
 
+/// Draw a bloom effect at a position (standalone function for easy use)
+///
+/// Creates a soft, multi-layered glow that simulates bloom.
+/// Higher intensity = brighter, more visible bloom.
+pub fn draw_bloom(pos: Vec2, radius: f32, color: Color, intensity: f32) {
+    let layers = 6;
+    for i in 0..layers {
+        let layer_radius = radius * (1.0 + i as f32 * 0.5);
+        let falloff = 1.0 - (i as f32 / layers as f32);
+        let alpha = color.a * intensity * falloff * falloff * 0.2;
+        draw_circle(pos.x, pos.y, layer_radius, Color::new(color.r, color.g, color.b, alpha));
+    }
+
+    // Bright core
+    let core_alpha = (color.a * intensity * 0.5).min(1.0);
+    draw_circle(pos.x, pos.y, radius * 0.3, Color::new(
+        (color.r * 1.2).min(1.0),
+        (color.g * 1.2).min(1.0),
+        (color.b * 1.2).min(1.0),
+        core_alpha,
+    ));
+}
+
+/// Draw a pulsing bloom effect
+pub fn draw_bloom_pulsing(pos: Vec2, radius: f32, color: Color, intensity: f32, time: f32, pulse_speed: f32) {
+    let pulse = (time * pulse_speed).sin() * 0.3 + 0.7;
+    draw_bloom(pos, radius * pulse, color, intensity * pulse);
+}
+
 /// Glow effect manager
 pub struct GlowEffect {
     // Currently stateless - glow is drawn per-object

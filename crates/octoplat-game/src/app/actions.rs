@@ -61,6 +61,9 @@ pub enum GameAction {
     /// Set the return state for settings menu
     SetSettingsReturnState(AppState),
 
+    /// Start a menu slide transition
+    StartMenuSlide(crate::ui::SlideDirection),
+
     // ========================================================================
     // Audio
     // ========================================================================

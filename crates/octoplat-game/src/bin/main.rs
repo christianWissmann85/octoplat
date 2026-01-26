@@ -70,6 +70,9 @@ fn execute_actions(game: &mut GameState, actions: GameActions) {
             GameAction::SetSettingsReturnState(state) => {
                 game.ui.menus.settings_return_state = Some(state);
             }
+            GameAction::StartMenuSlide(direction) => {
+                game.ui.start_menu_transition(direction);
+            }
             GameAction::PlaySound(id) => {
                 game.play_sound(id);
             }
@@ -105,9 +108,15 @@ fn execute_actions(game: &mut GameState, actions: GameActions) {
             }
             GameAction::TriggerDeath => {
                 game.trigger_death();
+                // Dramatic zoom out on death
+                game.gameplay.camera.zoom_out_dramatic();
             }
             GameAction::Respawn => {
                 game.respawn_player();
+                // Set respawn position for death transition swirl effect
+                game.ui.death_transition.set_respawn_pos(game.gameplay.player.position);
+                // Reset zoom when respawning
+                game.gameplay.camera.reset_zoom();
             }
             GameAction::GameOver => {
                 game.gameplay.death.respawn();
@@ -133,6 +142,10 @@ fn execute_actions(game: &mut GameState, actions: GameActions) {
                     game.fx.feedback.reset_level_complete();
                     // Play level complete sound immediately
                     game.play_sound(SoundId::LevelComplete);
+                    // Dramatic zoom in on level complete
+                    game.gameplay.camera.zoom_in_dramatic();
+                    // Start dive transition for visual polish
+                    game.ui.start_level_transition(ui::LevelTransitionDirection::Dive);
                 }
             }
             GameAction::SetLevelTextTimer(duration) => {
@@ -156,7 +169,14 @@ fn execute_actions(game: &mut GameState, actions: GameActions) {
                 start_roguelite_mode(game, preset, seed, biome);
             }
             GameAction::CompleteRogueliteLevel => {
-                roguelite::controller::complete_level(&mut game.progression.roguelite, game.gameplay.level_env.gems_collected);
+                let biome_advanced = roguelite::controller::complete_level(&mut game.progression.roguelite, game.gameplay.level_env.gems_collected);
+
+                // Trigger biome transition effect when entering a new biome
+                if biome_advanced {
+                    let new_biome = game.progression.roguelite.biome_progression.current_id();
+                    game.ui.start_biome_transition(new_biome);
+                }
+
                 match roguelite::controller::generate_linked_level(
                     &game.progression.roguelite,
                     &mut game.procgen,
@@ -441,6 +461,22 @@ async fn main() {
         // Handle transitions using the state controller
         game.state.update_transition(dt);
 
+        // Update menu slide transition
+        if let Some(ref mut transition) = game.ui.menu_transition {
+            if transition.update(dt) {
+                // Transition complete
+                game.ui.menu_transition = None;
+            }
+        }
+
+        // Update biome transition
+        if let Some(ref mut transition) = game.ui.biome_transition {
+            if transition.update(dt) {
+                // Transition complete
+                game.ui.biome_transition = None;
+            }
+        }
+
         // Update effects (music crossfades, ambient sounds, particles)
         game.fx.update(dt);
 
@@ -555,6 +591,16 @@ async fn main() {
         // Draw transition overlay if active
         if let Some(ref transition) = game.state.transition {
             ui::draw_fade_overlay(transition.fade_alpha());
+        }
+
+        // Draw menu slide transition overlay if active
+        if let Some(ref transition) = game.ui.menu_transition {
+            transition.draw_overlay();
+        }
+
+        // Draw biome transition overlay if active
+        if let Some(ref transition) = game.ui.biome_transition {
+            transition.draw();
         }
 
         next_frame().await;

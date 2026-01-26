@@ -87,7 +87,7 @@ pub use ui::{
 };
 pub use gameplay::{
     check_breakable_blocks, check_enemy_collision, check_fall_death, check_hazard_collision,
-    EnemyCollisionResult, process_feedback, FeedbackResult,
+    EnemyCollisionResult, EnemyType, process_feedback, FeedbackResult,
     apply_platform_movement, handle_platform_collisions,
     update_moving_platforms, update_crumbling_platforms,
 };

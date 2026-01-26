@@ -9,6 +9,7 @@ mod chromatic;
 pub use manager::ShaderManager;
 pub use chromatic::ChromaticAberration;
 
-// GlowEffect available for future centralized glow management
+// GlowEffect and bloom functions for visual effects
 #[allow(unused_imports)]
 pub use glow::GlowEffect;
+pub use glow::{draw_bloom, draw_bloom_pulsing};

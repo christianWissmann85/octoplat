@@ -24,6 +24,7 @@ pub fn title_update(game: &mut GameState, dt: f32) -> GameActions {
     if (game.input.menu_confirm || game.input.jump_pressed)
         && game.state.transition.is_none() {
             actions.push(GameAction::PlaySound(SoundId::MenuSelect));
+            actions.push(GameAction::StartMenuSlide(ui::SlideDirection::Up));
             actions.push(GameAction::TransitionTo(AppState::MainMenu));
         }
 
@@ -49,11 +50,13 @@ pub fn main_menu_update(game: &mut GameState, dt: f32) -> GameActions {
             MainMenuItem::RogueLite => {
                 // Go to biome selection for RogueLite
                 actions.push(GameAction::ResetMenuSelection(MenuId::BiomeSelect));
+                actions.push(GameAction::StartMenuSlide(ui::SlideDirection::Left));
                 actions.push(GameAction::SetStateDirect(AppState::BiomeSelect));
             }
             MainMenuItem::Settings => {
                 actions.push(GameAction::SetSettingsReturnState(AppState::MainMenu));
                 actions.push(GameAction::ResetMenuSelection(MenuId::Settings));
+                actions.push(GameAction::StartMenuSlide(ui::SlideDirection::Left));
                 actions.push(GameAction::SetStateDirect(AppState::Settings));
             }
             MainMenuItem::Quit => {
@@ -103,6 +106,7 @@ pub fn paused_update(game: &mut GameState, dt: f32, play_mode: PlayMode) -> Game
                 PauseMenuItem::Settings => {
                     actions.push(GameAction::SetSettingsReturnState(AppState::Paused(play_mode.clone())));
                     actions.push(GameAction::ResetMenuSelection(MenuId::Settings));
+                    actions.push(GameAction::StartMenuSlide(ui::SlideDirection::Left));
                     actions.push(GameAction::SetStateDirect(AppState::Settings));
                 }
                 PauseMenuItem::QuitToMenu => {
@@ -263,6 +267,7 @@ pub fn settings_update(game: &mut GameState, dt: f32) -> GameActions {
             let _ = e;
         }
         let return_state = game.ui.menus.settings_return_state.take().unwrap_or(AppState::MainMenu);
+        actions.push(GameAction::StartMenuSlide(ui::SlideDirection::Right));
         actions.push(GameAction::SetStateDirect(return_state));
         return actions;
     }
@@ -338,6 +343,7 @@ pub fn settings_update(game: &mut GameState, dt: f32) -> GameActions {
                     let _ = e;
                 }
                 let return_state = game.ui.menus.settings_return_state.take().unwrap_or(AppState::MainMenu);
+                actions.push(GameAction::StartMenuSlide(ui::SlideDirection::Right));
                 actions.push(GameAction::SetStateDirect(return_state));
             }
             _ => {}
@@ -408,11 +414,13 @@ pub fn biome_select_update(game: &mut GameState, dt: f32) -> GameActions {
             actions.push(GameAction::PlaySound(SoundId::MenuSelect));
             match item {
                 BiomeMenuItem::Back => {
+                    actions.push(GameAction::StartMenuSlide(ui::SlideDirection::Right));
                     actions.push(GameAction::SetStateDirect(AppState::MainMenu));
                 }
                 biome_item => {
                     // Start biome challenge with the selected biome (now uses linked segments)
                     if let Some(biome_id) = biome_item.to_biome_id() {
+                        actions.push(GameAction::StartMenuSlide(ui::SlideDirection::Down));
                         actions.push(GameAction::StartBiomeChallenge {
                             biome: biome_id,
                             preset: DifficultyPreset::Standard,
@@ -424,6 +432,7 @@ pub fn biome_select_update(game: &mut GameState, dt: f32) -> GameActions {
         }
         MenuAction::Cancel => {
             actions.push(GameAction::PlaySound(SoundId::MenuBack));
+            actions.push(GameAction::StartMenuSlide(ui::SlideDirection::Right));
             actions.push(GameAction::SetStateDirect(AppState::MainMenu));
         }
         _ => {}

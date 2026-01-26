@@ -5,6 +5,7 @@ use macroquad::prelude::*;
 use crate::collectibles::Gem;
 use crate::config::GameConfig;
 use crate::player::{Player, PlayerState};
+use crate::rendering::shaders::{draw_bloom, draw_bloom_pulsing};
 
 /// Draw grapple points (hooks)
 pub fn draw_grapple_points(points: &[Vec2], player: &Player, config: &GameConfig) {
@@ -30,7 +31,7 @@ pub fn draw_grapple_points(points: &[Vec2], player: &Player, config: &GameConfig
     }
 }
 
-/// Draw a gem as a diamond shape with glow effect
+/// Draw a gem as a diamond shape with bloom effect
 pub fn draw_gem(gem: &Gem, time: f32) {
     if !gem.collected {
         let pos = gem.render_position(time);
@@ -39,41 +40,47 @@ pub fn draw_gem(gem: &Gem, time: f32) {
         let sparkle = (time * 4.0).sin() * 0.3 + 0.7;
         let gem_color = Color::new(0.3 * sparkle, 0.8 * sparkle, 1.0 * sparkle, 1.0);
 
-        // Glow effect (multiple soft layers)
-        let glow_pulse = (time * 4.0).sin() * 0.3 + 0.7;
-        let glow_radius = 18.0 * glow_pulse;
-        for i in 0..4 {
-            let layer_radius = glow_radius * (1.0 + i as f32 * 0.3);
-            let alpha = 0.15 - i as f32 * 0.03;
-            draw_circle(pos.x, pos.y, layer_radius, Color::new(0.3 * sparkle, 0.8 * sparkle, 1.0 * sparkle, alpha));
-        }
+        // Enhanced bloom effect
+        draw_bloom_pulsing(
+            pos,
+            20.0,
+            Color::new(0.3, 0.8, 1.0, 0.8),
+            0.8,
+            time,
+            4.0,
+        );
 
         // Diamond shape (rotated square)
         let size = 12.0;
         draw_poly(pos.x, pos.y, 4, size, 45.0, gem_color);
 
-        // Inner highlight
+        // Inner highlight with bloom
         draw_poly(pos.x - 2.0, pos.y - 2.0, 4, size * 0.4, 45.0, WHITE);
+
+        // Extra sparkle bloom
+        let sparkle_offset = vec2((time * 3.0).cos() * 4.0, (time * 2.5).sin() * 4.0);
+        draw_bloom(pos + sparkle_offset, 4.0, Color::new(1.0, 1.0, 1.0, 0.6 * sparkle), 0.5);
     }
 }
 
-/// Draw checkpoints (save points) with enhanced glow
+/// Draw checkpoints (save points) with enhanced bloom
 pub fn draw_checkpoints(positions: &[Vec2], active_checkpoint: Option<Vec2>, time: f32) {
     for &pos in positions {
         let is_active = active_checkpoint.map(|cp| (cp - pos).length() < 5.0).unwrap_or(false);
 
-        // Enhanced glow when active (draw first, behind flag)
+        // Enhanced bloom when active (draw first, behind flag)
         if is_active {
             let glow_center = vec2(pos.x + 8.0, pos.y - 10.0);
-            let glow_pulse = (time * 3.0).sin() * 0.3 + 0.7;
-            let glow_radius = 24.0 * glow_pulse;
 
-            // Multiple glow layers
-            for i in 0..4 {
-                let layer_radius = glow_radius * (1.0 + i as f32 * 0.3);
-                let alpha = (0.2 - i as f32 * 0.04) * glow_pulse;
-                draw_circle(glow_center.x, glow_center.y, layer_radius, Color::new(0.2, 1.0, 0.4, alpha));
-            }
+            // Use bloom effect for active checkpoint
+            draw_bloom_pulsing(
+                glow_center,
+                28.0,
+                Color::new(0.2, 1.0, 0.4, 0.9),
+                1.0,
+                time,
+                3.0,
+            );
         }
 
         // Flag pole
@@ -101,19 +108,22 @@ pub fn draw_checkpoints(positions: &[Vec2], active_checkpoint: Option<Vec2>, tim
     }
 }
 
-/// Draw level exit with enhanced glow effect
+/// Draw level exit with enhanced bloom effect
 pub fn draw_exit(position: Option<Vec2>, time: f32) {
     if let Some(pos) = position {
         // Pulsing portal effect
         let pulse = (time * 3.0).sin() * 0.2 + 0.8;
         let size = 16.0 * pulse;
 
-        // Enhanced multi-layer glow
-        for i in 0..5 {
-            let layer_radius = (size + 8.0) * (1.0 + i as f32 * 0.4);
-            let alpha = (0.25 - i as f32 * 0.04) * pulse;
-            draw_circle(pos.x, pos.y, layer_radius, Color::new(1.0, 0.85, 0.3, alpha));
-        }
+        // Enhanced bloom effect (golden glow)
+        draw_bloom_pulsing(
+            pos,
+            40.0,
+            Color::new(1.0, 0.85, 0.3, 0.9),
+            1.2,
+            time,
+            3.0,
+        );
 
         // Outer glow ring
         draw_circle(pos.x, pos.y, size + 8.0, Color::new(0.9, 0.7, 0.2, 0.4));
@@ -121,10 +131,11 @@ pub fn draw_exit(position: Option<Vec2>, time: f32) {
         // Main portal
         draw_circle(pos.x, pos.y, size, Color::new(1.0, 0.8, 0.2, 0.9));
 
-        // Inner bright core
+        // Inner bright core with bloom
+        draw_bloom(pos, size * 0.4, Color::new(1.0, 1.0, 0.9, 1.0), 0.8);
         draw_circle(pos.x, pos.y, size * 0.5, Color::new(1.0, 1.0, 0.8, 1.0));
 
-        // Rotating particles (more particles, multiple rings)
+        // Rotating particles with individual bloom
         for ring in 0..2 {
             let ring_radius = size + 4.0 + ring as f32 * 8.0;
             let particle_count = 4 + ring * 2;
@@ -133,6 +144,9 @@ pub fn draw_exit(position: Option<Vec2>, time: f32) {
                 let angle = time * ring_speed + (i as f32) * std::f32::consts::TAU / particle_count as f32;
                 let particle_pos = pos + vec2(angle.cos(), angle.sin()) * ring_radius;
                 let particle_pulse = (time * 3.0 + i as f32 * 0.5).sin() * 0.3 + 0.7;
+
+                // Add bloom to orbiting particles
+                draw_bloom(particle_pos, 5.0, Color::new(1.0, 0.95, 0.6, 0.7), 0.4 * particle_pulse);
                 draw_circle(particle_pos.x, particle_pos.y, 3.0 * particle_pulse, Color::new(1.0, 0.95, 0.6, 0.8 * particle_pulse));
             }
         }

@@ -9,6 +9,7 @@ use crate::input::InputState;
 
 use super::state::PlayerState;
 use super::Player;
+use super::AnticipationType;
 
 impl Player {
     /// Execute a jet boost in input direction
@@ -26,6 +27,11 @@ impl Player {
             vec2(if self.facing_right { 1.0 } else { -1.0 }, 0.0)
         };
         self.jet_direction = dir.normalize();
+
+        // Add anticipation for downward dives (looks like a wind-up)
+        if self.jet_direction.y > 0.5 {
+            self.start_anticipation(AnticipationType::JetDive);
+        }
 
         // Update facing based on jet direction
         if self.jet_direction.x.abs() > 0.1 {

@@ -19,6 +19,7 @@ mod visual;
 
 pub use state::PlayerState;
 pub use movement::move_toward;
+// AnticipationType is defined in this module and exported directly
 
 use macroquad::prelude::*;
 use std::collections::HashSet;
@@ -129,6 +130,28 @@ pub struct Player {
     pub breathing_phase: f32,
     pub hit_flash_timer: f32,
     pub invincibility_timer: f32,
+
+    // Landing overshoot animation
+    pub landing_overshoot_timer: f32,
+    pub landing_overshoot_duration: f32,
+    pub landing_overshoot_intensity: f32,
+
+    // Anticipation animation (purely visual, no input delay)
+    pub anticipation_timer: f32,
+    pub anticipation_type: AnticipationType,
+}
+
+/// Type of anticipation animation (purely visual)
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
+pub enum AnticipationType {
+    #[default]
+    None,
+    /// Crouch squash before jump
+    Jump,
+    /// Compress against wall before wall jump
+    WallJump,
+    /// Wind up before jet boost dive
+    JetDive,
 }
 
 impl Player {
@@ -165,6 +188,11 @@ impl Player {
             breathing_phase: 0.0,
             hit_flash_timer: 0.0,
             invincibility_timer: 0.0,
+            landing_overshoot_timer: 0.0,
+            landing_overshoot_duration: 0.0,
+            landing_overshoot_intensity: 0.0,
+            anticipation_timer: 0.0,
+            anticipation_type: AnticipationType::None,
         }
     }
 

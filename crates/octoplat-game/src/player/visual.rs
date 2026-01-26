@@ -1,16 +1,29 @@
 //! Player visual effects
 //!
 //! Handles squash/stretch animations, breathing idle animation, hit flash,
-//! and invincibility frames.
+//! invincibility frames, and anticipation animations.
 
 use crate::config::GameConfig;
 use super::Player;
 use super::PlayerState;
+use super::AnticipationType;
+
+/// Duration of anticipation animation in seconds (very short to not delay gameplay feel)
+const ANTICIPATION_DURATION: f32 = 0.06;
 
 impl Player {
     /// Update visual effect timers with smooth interpolation
     pub fn update_visual_effects(&mut self, dt: f32) {
         use crate::rendering::easing;
+
+        // Update anticipation timer
+        if self.anticipation_timer > 0.0 {
+            self.anticipation_timer -= dt;
+            if self.anticipation_timer <= 0.0 {
+                self.anticipation_timer = 0.0;
+                self.anticipation_type = AnticipationType::None;
+            }
+        }
 
         // Update target scale based on state
         match self.state {
@@ -30,13 +43,35 @@ impl Player {
             }
         }
 
-        // Smooth interpolation for scale
-        self.visual_scale_y = easing::smooth_towards(
-            self.visual_scale_y,
-            self.target_scale_y,
-            12.0,
-            dt,
-        );
+        // Handle landing overshoot animation
+        if self.landing_overshoot_timer > 0.0 {
+            self.landing_overshoot_timer -= dt;
+
+            // Calculate animation progress (0 = start, 1 = end)
+            let progress = 1.0 - (self.landing_overshoot_timer / self.landing_overshoot_duration).max(0.0);
+
+            // Use elastic easing for bouncy overshoot effect
+            // This will squash down, then overshoot past 1.0, then settle
+            let elastic = easing::ease_out_elastic(progress);
+
+            // Interpolate from squash (0.7) to normal (1.0) with overshoot
+            let squash_amount = 0.7;
+            self.visual_scale_y = squash_amount + (1.0 - squash_amount) * elastic;
+
+            // Reset when done
+            if self.landing_overshoot_timer <= 0.0 {
+                self.landing_overshoot_timer = 0.0;
+                self.landing_overshoot_intensity = 0.0;
+            }
+        } else {
+            // Normal smooth interpolation for scale (when not in overshoot)
+            self.visual_scale_y = easing::smooth_towards(
+                self.visual_scale_y,
+                self.target_scale_y,
+                12.0,
+                dt,
+            );
+        }
 
         // Smooth interpolation for rotation
         self.visual_rotation = easing::smooth_towards(
@@ -69,8 +104,27 @@ impl Player {
         self.target_scale_y = 1.15;
     }
 
-    /// Trigger squash effect (for landing)
-    pub fn trigger_squash(&mut self) {
+    /// Trigger squash effect with overshoot (for landing)
+    ///
+    /// The intensity parameter (0.0-1.0+) affects how dramatic the bounce-back is.
+    /// Based on fall velocity - harder landings have more bounce.
+    pub fn trigger_squash(&mut self, intensity: f32) {
+        // Clamp intensity to reasonable range
+        let intensity = intensity.clamp(0.0, 1.5);
+
+        // Initial squash based on intensity (harder landing = more squash)
+        let squash_amount = 0.7 - intensity * 0.1; // 0.7 to 0.55 based on intensity
+        self.visual_scale_y = squash_amount.max(0.55);
+
+        // Start overshoot animation
+        // Duration scales with intensity - harder landings take longer to settle
+        self.landing_overshoot_duration = 0.25 + intensity * 0.15; // 0.25s to 0.4s
+        self.landing_overshoot_timer = self.landing_overshoot_duration;
+        self.landing_overshoot_intensity = intensity;
+    }
+
+    /// Trigger squash effect without overshoot (legacy, for simple uses)
+    pub fn trigger_squash_simple(&mut self) {
         self.visual_scale_y = 0.7;
         self.target_scale_y = 0.85;
     }
@@ -112,5 +166,72 @@ impl Player {
     /// Check if player is invincible (i-frames or jet boosting)
     pub fn is_invincible(&self) -> bool {
         self.invincibility_timer > 0.0 || self.state == PlayerState::JetBoosting
+    }
+
+    // ========================================================================
+    // Anticipation Animation
+    // ========================================================================
+
+    /// Start an anticipation animation (purely visual, no input delay)
+    ///
+    /// This creates a brief squash effect that gives actions more weight
+    /// without actually delaying the gameplay mechanics.
+    pub fn start_anticipation(&mut self, anticipation_type: AnticipationType) {
+        // Don't override if already in anticipation
+        if self.anticipation_timer > 0.0 {
+            return;
+        }
+
+        self.anticipation_type = anticipation_type;
+        self.anticipation_timer = ANTICIPATION_DURATION;
+
+        // Apply immediate visual effect based on type
+        match anticipation_type {
+            AnticipationType::Jump => {
+                // Crouch squash before jump
+                self.visual_scale_y = 0.85;
+            }
+            AnticipationType::WallJump => {
+                // Slight compression against wall
+                self.visual_scale_y = 0.9;
+            }
+            AnticipationType::JetDive => {
+                // Pull up before dive
+                self.visual_scale_y = 1.1;
+            }
+            AnticipationType::None => {}
+        }
+    }
+
+    /// Get the anticipation scale modifier (returns 1.0 if no anticipation active)
+    pub fn get_anticipation_scale(&self) -> (f32, f32) {
+        if self.anticipation_timer <= 0.0 || self.anticipation_type == AnticipationType::None {
+            return (1.0, 1.0);
+        }
+
+        // Calculate progress (0 = start, 1 = end)
+        let progress = 1.0 - (self.anticipation_timer / ANTICIPATION_DURATION);
+
+        match self.anticipation_type {
+            AnticipationType::Jump => {
+                // Squash horizontally, stretch vertically (crouch)
+                let squash = 1.0 + 0.12 * (1.0 - progress); // 1.12 -> 1.0
+                let stretch = 1.0 - 0.15 * (1.0 - progress); // 0.85 -> 1.0
+                (squash, stretch)
+            }
+            AnticipationType::WallJump => {
+                // Compress against wall
+                let compress = 1.0 - 0.1 * (1.0 - progress); // 0.9 -> 1.0
+                let stretch = 1.0 + 0.05 * (1.0 - progress); // 1.05 -> 1.0
+                (compress, stretch)
+            }
+            AnticipationType::JetDive => {
+                // Pull up before dive
+                let compress = 1.0 - 0.05 * (1.0 - progress); // 0.95 -> 1.0
+                let stretch = 1.0 + 0.12 * (1.0 - progress); // 1.12 -> 1.0
+                (compress, stretch)
+            }
+            AnticipationType::None => (1.0, 1.0),
+        }
     }
 }

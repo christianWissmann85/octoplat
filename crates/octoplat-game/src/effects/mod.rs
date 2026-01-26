@@ -7,19 +7,25 @@
 
 mod controller;
 mod particles;
+mod speed_lines;
 
 pub use controller::EffectsController;
 pub use particles::{BurstConfig, ParticleSystem};
+pub use speed_lines::SpeedLines;
 
 use macroquad::prelude::*;
 
-/// Screen shake state
+/// Screen shake state with smooth dampening
 #[derive(Default)]
 pub struct ScreenShake {
     /// Current shake intensity
     intensity: f32,
     /// Time remaining for shake
     timer: f32,
+    /// Maximum duration (for decay calculation)
+    max_duration: f32,
+    /// Accumulated time for smooth noise
+    noise_time: f32,
     /// Current offset applied to camera
     pub offset: Vec2,
 }
@@ -32,26 +38,54 @@ impl ScreenShake {
     /// Add screen shake with given intensity and duration
     pub fn add(&mut self, intensity: f32, duration: f32) {
         // Take the maximum intensity if already shaking
-        self.intensity = self.intensity.max(intensity);
-        self.timer = self.timer.max(duration);
+        if intensity > self.intensity {
+            self.intensity = intensity;
+            self.max_duration = duration;
+            self.timer = duration;
+        } else if duration > self.timer {
+            // Extend duration if new shake is longer
+            self.timer = duration;
+            self.max_duration = self.max_duration.max(duration);
+        }
     }
 
-    /// Update shake state and calculate new offset
+    /// Update shake state and calculate new offset with smooth dampening
     pub fn update(&mut self, dt: f32) {
         if self.timer > 0.0 {
             self.timer -= dt;
+            self.noise_time += dt;
 
-            // Calculate current intensity based on remaining time
-            let current_intensity = self.intensity * (self.timer / 0.2).min(1.0);
+            // Calculate decay progress (0 = start, 1 = end)
+            let progress = 1.0 - (self.timer / self.max_duration).max(0.0);
 
-            // Random offset within intensity range
+            // Use ease-out quadratic for smooth decay (fast initial shake, smooth fade)
+            let decay = 1.0 - crate::rendering::easing::ease_out_quad(progress);
+
+            // Current intensity with decay applied
+            let current_intensity = self.intensity * decay;
+
+            // Use layered sine waves for smooth, organic motion instead of pure random
+            // This creates a more natural shake that doesn't feel jittery
+            let freq1 = 25.0; // Primary shake frequency
+            let freq2 = 41.0; // Secondary frequency (different to avoid patterns)
+            let freq3 = 67.0; // Tertiary for added variation
+
+            let noise_x = (self.noise_time * freq1).sin() * 0.6
+                + (self.noise_time * freq2).cos() * 0.3
+                + (self.noise_time * freq3).sin() * 0.1;
+
+            let noise_y = (self.noise_time * freq1 * 1.1).cos() * 0.6
+                + (self.noise_time * freq2 * 0.9).sin() * 0.3
+                + (self.noise_time * freq3 * 1.2).cos() * 0.1;
+
             self.offset = vec2(
-                rand::gen_range(-current_intensity, current_intensity),
-                rand::gen_range(-current_intensity, current_intensity),
+                noise_x * current_intensity,
+                noise_y * current_intensity,
             );
 
             if self.timer <= 0.0 {
                 self.intensity = 0.0;
+                self.max_duration = 0.0;
                 self.offset = Vec2::ZERO;
             }
         } else {
@@ -64,6 +98,7 @@ impl ScreenShake {
 pub struct EffectsManager {
     pub particles: ParticleSystem,
     pub shake: ScreenShake,
+    pub speed_lines: SpeedLines,
 }
 
 impl EffectsManager {
@@ -71,16 +106,28 @@ impl EffectsManager {
         Self {
             particles: ParticleSystem::new(),
             shake: ScreenShake::new(),
+            speed_lines: SpeedLines::new(),
         }
     }
 
     pub fn update(&mut self, dt: f32) {
         self.particles.update(dt);
         self.shake.update(dt);
+        // Note: speed_lines.update() is called separately with player velocity
+    }
+
+    /// Update speed lines based on player velocity
+    pub fn update_speed_lines(&mut self, dt: f32, player_vel: Vec2, is_jet_boosting: bool) {
+        self.speed_lines.update(dt, player_vel, is_jet_boosting);
     }
 
     pub fn draw(&self) {
         self.particles.draw();
+    }
+
+    /// Draw speed lines in screen space (call after resetting camera)
+    pub fn draw_speed_lines(&self) {
+        self.speed_lines.draw();
     }
 
     // ========================================================================
@@ -363,6 +410,98 @@ impl EffectsManager {
 
         // Light celebratory screen shake
         self.shake.add(3.0, 0.15);
+    }
+
+    /// Spawn crab defeat effect - orange shell fragments bursting outward
+    pub fn spawn_crab_defeat(&mut self, pos: Vec2) {
+        // Primary burst - orange/red shell fragments
+        self.particles.burst(
+            pos,
+            BurstConfig {
+                count: 14,
+                speed_range: (80.0, 180.0),
+                angle_range: (0.0, std::f32::consts::TAU), // All directions
+                lifetime: 0.5,
+                size_range: (4.0, 8.0),
+                color: Color::new(0.9, 0.4, 0.2, 0.95), // Orange-red
+                gravity: 200.0,
+                fade: true,
+                shrink: true,
+            },
+        );
+
+        // Secondary burst - smaller debris
+        self.particles.burst(
+            pos,
+            BurstConfig {
+                count: 8,
+                speed_range: (40.0, 100.0),
+                angle_range: (0.0, std::f32::consts::TAU),
+                lifetime: 0.4,
+                size_range: (2.0, 4.0),
+                color: Color::new(0.7, 0.3, 0.1, 0.8), // Darker orange
+                gravity: 150.0,
+                fade: true,
+                shrink: true,
+            },
+        );
+
+        // Satisfying defeat screen shake
+        self.shake.add(4.0, 0.12);
+    }
+
+    /// Spawn pufferfish defeat effect - blue deflation burst with pop
+    pub fn spawn_pufferfish_defeat(&mut self, pos: Vec2) {
+        // Primary burst - blue/purple deflation particles spiraling out
+        self.particles.burst(
+            pos,
+            BurstConfig {
+                count: 16,
+                speed_range: (100.0, 200.0),
+                angle_range: (0.0, std::f32::consts::TAU), // All directions
+                lifetime: 0.45,
+                size_range: (5.0, 10.0),
+                color: Color::new(0.4, 0.6, 0.9, 0.9), // Blue
+                gravity: 80.0,
+                fade: true,
+                shrink: true,
+            },
+        );
+
+        // Secondary "pop" particles - small white sparkles
+        self.particles.burst(
+            pos,
+            BurstConfig {
+                count: 10,
+                speed_range: (60.0, 140.0),
+                angle_range: (0.0, std::f32::consts::TAU),
+                lifetime: 0.3,
+                size_range: (2.0, 4.0),
+                color: Color::new(0.9, 0.95, 1.0, 0.95), // White-ish
+                gravity: -20.0, // Float slightly
+                fade: true,
+                shrink: false,
+            },
+        );
+
+        // Tertiary - spines flying off
+        self.particles.burst(
+            pos,
+            BurstConfig {
+                count: 6,
+                speed_range: (120.0, 200.0),
+                angle_range: (0.0, std::f32::consts::TAU),
+                lifetime: 0.5,
+                size_range: (3.0, 5.0),
+                color: Color::new(0.6, 0.5, 0.8, 0.85), // Purple-ish
+                gravity: 180.0,
+                fade: true,
+                shrink: true,
+            },
+        );
+
+        // Satisfying pop shake
+        self.shake.add(5.0, 0.1);
     }
 }
 

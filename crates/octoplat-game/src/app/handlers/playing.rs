@@ -55,17 +55,27 @@ fn update_minimap_input(game: &GameState) -> GameActions {
 /// Update the death state
 ///
 /// Returns actions for respawn or game over.
+/// Uses death transition timing for coordinated visual effects.
 pub fn update_death(game: &mut GameState, dt: f32) -> GameActions {
     let mut actions = GameActions::new();
 
-    if game.gameplay.death.is_dead
-        && game.gameplay.death.update(dt) {
-            if game.progression.lives.is_game_over() {
-                actions.push(GameAction::GameOver);
-            } else {
-                actions.push(GameAction::Respawn);
-            }
+    if !game.gameplay.death.is_dead {
+        return actions;
+    }
+
+    // Still update the legacy death timer for backwards compatibility
+    let _ = game.gameplay.death.update(dt);
+
+    // Use death transition timing for respawn (triggers during Hold phase)
+    if game.ui.death_transition.should_switch_state() {
+        game.ui.death_transition.mark_switched();
+
+        if game.progression.lives.is_game_over() {
+            actions.push(GameAction::GameOver);
+        } else {
+            actions.push(GameAction::Respawn);
         }
+    }
 
     actions
 }
@@ -165,7 +175,19 @@ fn update_enemies(game: &mut GameState, dt: f32) -> Option<GameAction> {
 
     match collision_result {
         gameplay::EnemyCollisionResult::PlayerDied => Some(GameAction::TriggerDeath),
-        gameplay::EnemyCollisionResult::EnemyKilled | gameplay::EnemyCollisionResult::None => None,
+        gameplay::EnemyCollisionResult::EnemyKilled { position, enemy_type } => {
+            // Spawn defeat particles based on enemy type
+            match enemy_type {
+                gameplay::EnemyType::Crab => {
+                    game.fx.effects.spawn_crab_defeat(position);
+                }
+                gameplay::EnemyType::Pufferfish => {
+                    game.fx.effects.spawn_pufferfish_defeat(position);
+                }
+            }
+            None
+        }
+        gameplay::EnemyCollisionResult::None => None,
     }
 }
 
@@ -178,6 +200,9 @@ fn update_camera(game: &mut GameState, dt: f32, level_bounds: Rect) {
         level_bounds,
         &game.gameplay.config,
     );
+
+    // Update zoom transitions
+    game.gameplay.camera.update_zoom(dt);
 }
 
 /// Update gem collection and milestone rewards
@@ -296,6 +321,21 @@ fn update_level_progress(game: &mut GameState, dt: f32, level_bounds: Rect) -> G
 fn update_effects(game: &mut GameState, dt: f32) {
     game.fx.effects.update(dt);
     game.fx.shaders.update_chromatic(dt);
+
+    // Update speed lines with player velocity
+    let is_jet_boosting = game.gameplay.player.state == crate::player::PlayerState::JetBoosting;
+    game.fx.effects.update_speed_lines(dt, game.gameplay.player.velocity, is_jet_boosting);
+
+    // Update death transition
+    game.ui.death_transition.update(dt);
+
+    // Update level transition if active
+    if let Some(ref mut transition) = game.ui.level_transition {
+        if transition.update(dt) {
+            // Transition complete
+            game.ui.level_transition = None;
+        }
+    }
 }
 
 // ============================================================================
@@ -527,6 +567,9 @@ pub fn render(game: &GameState, time: f32) {
         rendering::draw_biome_particles(theme, time, 30);
     }
 
+    // Draw speed lines (screen space, behind HUD)
+    game.fx.effects.draw_speed_lines();
+
     // Draw HUD
     rendering::draw_hud(
         game.gameplay.level_env.gems_collected,
@@ -586,6 +629,14 @@ pub fn render(game: &GameState, time: f32) {
             "F2:Standard F3:Casual F4:Challenge F5:Export F6:Seed F7:RogueLite"
         };
         draw_text(hints, 10.0, screen_height() - 10.0, 12.0, Color::new(0.5, 0.6, 0.7, 0.6));
+    }
+
+    // Draw death/respawn transition overlay
+    game.ui.death_transition.draw();
+
+    // Draw level transition overlay
+    if let Some(ref transition) = game.ui.level_transition {
+        transition.draw();
     }
 
     // Debug info

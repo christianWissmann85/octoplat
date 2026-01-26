@@ -9,6 +9,7 @@ use crate::input::InputState;
 
 use super::state::PlayerState;
 use super::Player;
+use super::AnticipationType;
 
 impl Player {
     /// Apply gravity to vertical velocity, clamped to terminal velocity
@@ -19,6 +20,11 @@ impl Player {
 
     /// Execute a regular jump from ground
     pub(super) fn execute_jump(&mut self, config: &GameConfig) {
+        // Start anticipation animation (purely visual, doesn't delay jump)
+        self.start_anticipation(AnticipationType::Jump);
+        // Trigger the stretch visual effect
+        self.trigger_stretch();
+
         self.velocity.y = config.jump_velocity;
         self.state = PlayerState::Jumping;
         self.coyote_timer = 0.0;
@@ -53,6 +59,11 @@ impl Player {
         // This is the X position of the wall we're jumping from
         let wall_x = self.position.x + (self.wall_direction as f32 * self.hitbox.width / 2.0);
         self.last_wall_jump_x = Some(wall_x);
+
+        // Start anticipation animation (purely visual)
+        self.start_anticipation(AnticipationType::WallJump);
+        // Trigger stretch effect for launch feel
+        self.trigger_stretch();
 
         self.velocity = vec2(
             horizontal_push * -self.wall_direction as f32,

@@ -27,15 +27,25 @@ pub fn check_hazard_collision(player: &Player, tilemap: &TileMap) -> bool {
     false
 }
 
-/// Result of an enemy collision check
+/// Type of enemy that was killed
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EnemyType {
+    Crab,
+    Pufferfish,
+}
+
+/// Result of an enemy collision check
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum EnemyCollisionResult {
     /// No collision occurred
     None,
     /// Player died from collision (not attacking)
     PlayerDied,
-    /// Enemy was killed by jet boost
-    EnemyKilled,
+    /// Enemy was killed by jet boost - includes position and type for effects
+    EnemyKilled {
+        position: macroquad::prelude::Vec2,
+        enemy_type: EnemyType,
+    },
 }
 
 /// Check enemy collisions, handling jet boost kills
@@ -65,11 +75,15 @@ pub fn check_enemy_collision<'a>(
         if player_rect.overlaps(&crab.collision_rect()) {
             if is_attacking {
                 // Jet boost kills the crab, bounce player
+                let crab_pos = crab.position;
                 crab.alive = false;
                 player.velocity.y = -config.bounce_velocity * 0.5;
                 player.state = PlayerState::Jumping;
                 player.jet_timer = 0.0; // End jet on kill
-                return EnemyCollisionResult::EnemyKilled;
+                return EnemyCollisionResult::EnemyKilled {
+                    position: crab_pos,
+                    enemy_type: EnemyType::Crab,
+                };
             } else if !player.is_inked && !player.is_invincible() {
                 // Player dies (unless invincible)
                 return EnemyCollisionResult::PlayerDied;
@@ -86,11 +100,15 @@ pub fn check_enemy_collision<'a>(
         if player_rect.overlaps(&puffer.collision_rect()) {
             if is_attacking {
                 // Jet boost kills the pufferfish, bounce player
+                let puffer_pos = puffer.position;
                 puffer.alive = false;
                 player.velocity.y = -config.bounce_velocity * 0.5;
                 player.state = PlayerState::Jumping;
                 player.jet_timer = 0.0; // End jet on kill
-                return EnemyCollisionResult::EnemyKilled;
+                return EnemyCollisionResult::EnemyKilled {
+                    position: puffer_pos,
+                    enemy_type: EnemyType::Pufferfish,
+                };
             } else if !player.is_inked && !player.is_invincible() {
                 // Player dies (unless invincible)
                 return EnemyCollisionResult::PlayerDied;

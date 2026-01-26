@@ -1,6 +1,15 @@
 use macroquad::prelude::*;
 
 use crate::config::GameConfig;
+use crate::rendering::easing::ease_in_out_cubic;
+
+/// Zoom transition state
+struct ZoomTransition {
+    from: f32,
+    to: f32,
+    duration: f32,
+    elapsed: f32,
+}
 
 pub struct GameCamera {
     pub position: Vec2,
@@ -9,6 +18,12 @@ pub struct GameCamera {
 
     // Lookahead direction (smoothed)
     lookahead_direction: Vec2,
+
+    // Zoom transition
+    zoom_transition: Option<ZoomTransition>,
+
+    // Base zoom level (to return to after effects)
+    base_zoom: f32,
 }
 
 impl GameCamera {
@@ -18,6 +33,8 @@ impl GameCamera {
             target: Vec2::ZERO,
             zoom: 1.0,
             lookahead_direction: Vec2::ZERO,
+            zoom_transition: None,
+            base_zoom: 1.0,
         }
     }
 
@@ -107,6 +124,63 @@ impl GameCamera {
     pub fn snap_to(&mut self, position: Vec2) {
         self.position = position;
         self.target = position;
+    }
+
+    /// Start a zoom transition to a target zoom level
+    ///
+    /// The zoom will smoothly transition over the given duration using
+    /// ease-in-out easing for a polished feel.
+    pub fn zoom_to(&mut self, target_zoom: f32, duration: f32) {
+        self.zoom_transition = Some(ZoomTransition {
+            from: self.zoom,
+            to: target_zoom,
+            duration,
+            elapsed: 0.0,
+        });
+    }
+
+    /// Zoom in slightly (for dramatic moments like level complete)
+    pub fn zoom_in_dramatic(&mut self) {
+        self.zoom_to(1.15, 0.4);
+    }
+
+    /// Zoom out slightly (for death or wide view)
+    pub fn zoom_out_dramatic(&mut self) {
+        self.zoom_to(0.9, 0.3);
+    }
+
+    /// Return to base zoom level
+    pub fn reset_zoom(&mut self) {
+        self.zoom_to(self.base_zoom, 0.3);
+    }
+
+    /// Set the base zoom level (default zoom to return to)
+    #[allow(dead_code)]
+    pub fn set_base_zoom(&mut self, zoom: f32) {
+        self.base_zoom = zoom;
+    }
+
+    /// Update zoom transition (call every frame)
+    pub fn update_zoom(&mut self, dt: f32) {
+        if let Some(ref mut transition) = self.zoom_transition {
+            transition.elapsed += dt;
+            let t = (transition.elapsed / transition.duration).min(1.0);
+
+            // Use ease-in-out for smooth zoom
+            let eased_t = ease_in_out_cubic(t);
+            self.zoom = transition.from + (transition.to - transition.from) * eased_t;
+
+            if t >= 1.0 {
+                self.zoom = transition.to;
+                self.zoom_transition = None;
+            }
+        }
+    }
+
+    /// Check if a zoom transition is in progress
+    #[allow(dead_code)]
+    pub fn is_zooming(&self) -> bool {
+        self.zoom_transition.is_some()
     }
 }
 

@@ -82,8 +82,8 @@ pub fn process_feedback(
                     // Land intensity based on fall velocity
                     let intensity = (tracker.prev_velocity_y / 500.0).clamp(0.3, 1.5);
                     effects.spawn_land(player_feet, intensity);
-                    // Squash on landing
-                    player.trigger_squash();
+                    // Squash on landing with overshoot animation based on intensity
+                    player.trigger_squash(intensity);
                     // Hard landing recovery (brief movement slowdown)
                     if tracker.prev_velocity_y > config.hard_landing_threshold {
                         player.trigger_landing_recovery(config.landing_recovery_time);
