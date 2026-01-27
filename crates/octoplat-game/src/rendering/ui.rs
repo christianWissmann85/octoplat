@@ -75,7 +75,7 @@ pub fn draw_hud(
         (sw - hint_width) / 2.0,
         sh - 8.0,
         13.0,
-        Color::new(1.0, 1.0, 1.0, 0.4),
+        Color::new(1.0, 1.0, 1.0, 0.75),
     );
 }
 

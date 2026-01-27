@@ -35,7 +35,7 @@ pub fn draw_pause_menu(menu: &MenuState<PauseMenuItem>, overlay_texture: Option<
         "ESC to resume",
         sh - 40.0,
         16.0,
-        Color::new(0.5, 0.6, 0.7, 0.5),
+        Color::new(0.5, 0.6, 0.7, 0.75),
     );
 }
 

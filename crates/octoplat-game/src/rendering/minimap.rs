@@ -243,12 +243,12 @@ fn draw_minimap_tiles(
 fn get_minimap_tile_color(tile: TileType) -> Color {
     match tile {
         TileType::Empty => BLANK,
-        TileType::Solid => Color::new(0.25, 0.4, 0.5, 0.9),
-        TileType::Platform => Color::new(0.35, 0.5, 0.45, 0.9),
-        TileType::Spike => Color::new(0.7, 0.25, 0.25, 0.9),
-        TileType::OneWay => Color::new(0.4, 0.55, 0.5, 0.6),
-        TileType::BouncePad => Color::new(0.8, 0.35, 0.45, 0.9),
-        TileType::Breakable => Color::new(0.5, 0.4, 0.25, 0.9),
+        TileType::Solid => Color::new(0.35, 0.55, 0.65, 0.95),
+        TileType::Platform => Color::new(0.45, 0.65, 0.55, 0.95),
+        TileType::Spike => Color::new(0.85, 0.35, 0.35, 0.95),
+        TileType::OneWay => Color::new(0.55, 0.7, 0.65, 0.75),
+        TileType::BouncePad => Color::new(0.95, 0.5, 0.55, 0.95),
+        TileType::Breakable => Color::new(0.65, 0.55, 0.35, 0.95),
     }
 }
 

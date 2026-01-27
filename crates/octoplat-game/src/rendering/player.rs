@@ -6,6 +6,7 @@ use macroquad::prelude::*;
 
 use crate::config::GameConfig;
 use crate::player::{Player, PlayerState};
+use crate::rendering::shaders::draw_bloom;
 
 /// Calculate a point on a cubic bezier curve
 fn bezier_point(p0: Vec2, p1: Vec2, p2: Vec2, p3: Vec2, t: f32) -> Vec2 {
@@ -181,6 +182,25 @@ pub fn draw_player(player: &Player, config: &GameConfig, time: f32) {
                 Color::new(0.3, 0.5, 0.9, alpha),
             );
         }
+    }
+
+    // Player glow for visibility against backgrounds
+    if !player.is_inked {
+        let glow_color = match player.state {
+            PlayerState::JetBoosting if player.is_jet_downward() => {
+                Color::new(0.4, 0.6, 1.0, 0.9)  // Bright blue for downward jet
+            }
+            PlayerState::JetBoosting => {
+                Color::new(0.3, 1.0, 1.0, 0.9)  // Bright cyan for jet
+            }
+            _ => Color::new(1.0, 0.5, 0.8, 0.7),  // Bright pink/magenta normally
+        };
+        draw_bloom(
+            vec2(position.x, position.y + body_y_offset),
+            body_radius * 1.8,  // Larger glow radius
+            glow_color,
+            0.8,  // Higher intensity
+        );
     }
 
     // Body (ellipse for squash/stretch effect)

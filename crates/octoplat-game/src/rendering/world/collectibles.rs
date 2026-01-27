@@ -40,18 +40,18 @@ pub fn draw_gem(gem: &Gem, time: f32) {
         let sparkle = (time * 4.0).sin() * 0.3 + 0.7;
         let gem_color = Color::new(0.3 * sparkle, 0.8 * sparkle, 1.0 * sparkle, 1.0);
 
-        // Enhanced bloom effect
+        // Enhanced bloom effect (increased for better visibility)
         draw_bloom_pulsing(
             pos,
-            20.0,
-            Color::new(0.3, 0.8, 1.0, 0.8),
-            0.8,
+            27.0,
+            Color::new(0.3, 0.8, 1.0, 1.0),
+            1.0,
             time,
             4.0,
         );
 
         // Diamond shape (rotated square)
-        let size = 12.0;
+        let size = 14.0;
         draw_poly(pos.x, pos.y, 4, size, 45.0, gem_color);
 
         // Inner highlight with bloom

@@ -52,14 +52,19 @@ pub fn draw_main_menu(
         draw_rectangle(0.0, 0.0, sw, sh, Color::new(0.0, 0.0, 0.0, 0.3));
     }
 
-    // Title (smaller than title screen) with shadow
-    draw_centered_text(
-        "OCTOPLAT",
-        sh * 0.15 + 2.0,
-        60.0,
-        Color::new(0.0, 0.0, 0.0, 0.4),
-    );
-    draw_centered_text("OCTOPLAT", sh * 0.15, 60.0, Color::new(0.3, 0.8, 0.9, 1.0));
+    // Draw logo or title text (use splash banner if available)
+    if let Some(logo) = ui_textures.and_then(|t| t.title.logo.as_ref()) {
+        draw_main_menu_logo(logo, sw, sh);
+    } else {
+        // Fallback: Title text (smaller than title screen) with shadow
+        draw_centered_text(
+            "OCTOPLAT",
+            sh * 0.15 + 2.0,
+            60.0,
+            Color::new(0.0, 0.0, 0.0, 0.4),
+        );
+        draw_centered_text("OCTOPLAT", sh * 0.15, 60.0, Color::new(0.3, 0.8, 0.9, 1.0));
+    }
 
     // Menu items
     let labels: Vec<&str> = menu.items.iter().map(|item| item.label()).collect();
@@ -81,7 +86,7 @@ pub fn draw_main_menu(
         description,
         sh * 0.85,
         20.0,
-        Color::new(0.5, 0.6, 0.7, 0.7),
+        Color::new(0.5, 0.6, 0.7, 0.85),
     );
 
     // Navigation hint with shadow
@@ -95,7 +100,7 @@ pub fn draw_main_menu(
         "W/S or Arrow Keys to navigate  |  SPACE/ENTER to select",
         sh - 30.0,
         16.0,
-        Color::new(0.4, 0.5, 0.6, 0.5),
+        Color::new(0.4, 0.5, 0.6, 0.75),
     );
 }
 
@@ -115,4 +120,40 @@ fn draw_menu_bubbles(time: f32, opacity_mult: f32) {
 
         draw_circle(x, sh - y, size, Color::new(0.7, 0.85, 1.0, alpha));
     }
+}
+
+/// Draw the logo texture for main menu (smaller than title screen, no animation)
+fn draw_main_menu_logo(logo: &Texture2D, sw: f32, sh: f32) {
+    let logo_w = logo.width();
+    let logo_h = logo.height();
+    let max_width = sw * 0.45;
+    let scale = (max_width / logo_w).min(1.0);
+    let dest_w = logo_w * scale;
+    let dest_h = logo_h * scale;
+
+    let x = (sw - dest_w) / 2.0;
+    let y = sh * 0.12 - dest_h / 2.0;
+
+    // Subtle glow behind logo
+    for glow in 1..=2 {
+        let expand = glow as f32 * 6.0;
+        draw_rectangle(
+            x - expand,
+            y - expand,
+            dest_w + expand * 2.0,
+            dest_h + expand * 2.0,
+            Color::new(0.3, 0.8, 1.0, 0.08 / glow as f32),
+        );
+    }
+
+    draw_texture_ex(
+        logo,
+        x,
+        y,
+        WHITE,
+        DrawTextureParams {
+            dest_size: Some(vec2(dest_w, dest_h)),
+            ..Default::default()
+        },
+    );
 }

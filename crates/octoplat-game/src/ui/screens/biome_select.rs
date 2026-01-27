@@ -197,6 +197,6 @@ pub fn draw_biome_select(
         "W/S to navigate  |  SPACE to select  |  ESC to go back",
         sh - 30.0,
         16.0,
-        Color::new(0.4, 0.5, 0.6, 0.5),
+        Color::new(0.4, 0.5, 0.6, 0.75),
     );
 }

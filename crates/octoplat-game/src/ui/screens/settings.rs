@@ -171,6 +171,6 @@ pub fn draw_settings(
         "UP/DOWN: Select   LEFT/RIGHT: Adjust   ENTER: Confirm",
         sh * 0.88,
         18.0,
-        Color::new(0.5, 0.5, 0.5, 0.7),
+        Color::new(0.5, 0.5, 0.5, 0.85),
     );
 }
