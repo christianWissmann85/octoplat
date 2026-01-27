@@ -13,6 +13,38 @@ use crate::hazards::{Crab, Pufferfish, PufferfishPattern};
 use crate::platforms::{CrumblingPlatform, MovingPlatform};
 use octoplat_core::level::{Decoration, MarkerType, TileMap};
 
+/// Find the ground position below a marker position for ground-based enemies.
+/// Scans downward from the marker to find solid ground, then positions the entity
+/// just above it. Returns original position if no ground is found.
+fn find_ground_below(tilemap: &TileMap, marker_pos: octoplat_core::Vec2) -> octoplat_core::Vec2 {
+    let tile_size = tilemap.tile_size;
+
+    // Convert marker position to grid coordinates
+    let grid_x = ((marker_pos.x - tile_size / 2.0) / tile_size) as usize;
+    let start_grid_y = ((marker_pos.y - tile_size / 2.0) / tile_size) as usize;
+
+    // Scan downward to find solid ground (check up to 10 tiles down)
+    for offset in 0..10 {
+        let grid_y = start_grid_y + offset;
+        if grid_y >= tilemap.height {
+            break;
+        }
+
+        if tilemap.get(grid_x, grid_y).is_solid() {
+            // Found solid ground, position entity just above it
+            // Crab collision rect has center at position.y, feet at position.y + 10
+            // So position the center 10 pixels above the top of the solid tile
+            return octoplat_core::vec2(
+                marker_pos.x,
+                grid_y as f32 * tile_size - 10.0,
+            );
+        }
+    }
+
+    // No ground found within range, return original position
+    marker_pos
+}
+
 // ============================================================================
 // Entity ID Types
 // ============================================================================
@@ -224,8 +256,10 @@ impl LevelEnvironment {
         self.exit_position = tilemap.get_exit_position().map(vec2_to_mq);
 
         // Set up enemies from markers
+        // Crabs need to be snapped to ground level since markers may be placed above platforms
         for pos in tilemap.get_marker_positions(MarkerType::Crab) {
-            self.spawn_crab(Crab::new(vec2_to_mq(pos), config));
+            let ground_pos = find_ground_below(tilemap, pos);
+            self.spawn_crab(Crab::new(vec2_to_mq(ground_pos), config));
         }
 
         for m in &tilemap.markers {

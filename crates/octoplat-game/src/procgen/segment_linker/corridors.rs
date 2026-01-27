@@ -5,6 +5,34 @@ use octoplat_core::constants::PROCGEN;
 use super::segment::ParsedSegment;
 use super::types::LinkDirection;
 
+/// Check if a tile character represents a special game element that should be preserved
+/// during corridor carving (gems, enemies, checkpoints, etc.)
+fn is_special_tile(tile: char) -> bool {
+    matches!(
+        tile,
+        '*'  // Gems
+        | '@' // Grapple points
+        | 'C' // Crabs
+        | 'O' // Pufferfish
+        | '^' // Spikes/hazards
+        | '~' // Water pools
+        | 'S' // Checkpoints
+        | '>' // Exit
+        | 'P' // Player spawn
+        | '?' // Placeholder slots
+    )
+}
+
+/// Clear a tile only if it's not a special game element or platform
+fn clear_tile_if_safe(tilemap: &mut [Vec<char>], y: usize, x: usize) {
+    if y < tilemap.len() && x < tilemap[y].len() {
+        let tile = tilemap[y][x];
+        if tile != '_' && !is_special_tile(tile) {
+            tilemap[y][x] = ' ';
+        }
+    }
+}
+
 /// Find a suitable exit row on the right edge of a segment (prefers mid-height)
 /// Prioritizes positions near the vertical center of the segment to ensure
 /// corridors connect through the main gameplay area, not the edges.
@@ -193,25 +221,21 @@ pub fn punch_through_wall(
                     continue;
                 }
 
-                // Clear ABOVE the punch point
+                // Clear ABOVE the punch point (preserving special tiles)
                 for dy in 0..clearance_above {
                     let punch_y = y.saturating_sub(dy);
-                    if punch_y < height {
-                        tilemap[punch_y][punch_x] = ' ';
-                    }
+                    clear_tile_if_safe(tilemap, punch_y, punch_x);
                 }
 
                 // Clear BELOW the punch point (for segments at different heights)
                 for dy in 1..=clearance_below {
                     let punch_y = y + dy;
-                    if punch_y < height {
-                        tilemap[punch_y][punch_x] = ' ';
-                    }
+                    clear_tile_if_safe(tilemap, punch_y, punch_x);
                 }
 
                 // Ensure floor - create platform for traversal
                 let floor_y = y + clearance_below + 1;
-                if floor_y < height {
+                if floor_y < height && !is_special_tile(tilemap[floor_y][punch_x]) {
                     tilemap[floor_y][punch_x] = '_';
                 }
             }
@@ -229,28 +253,25 @@ pub fn punch_through_wall(
                     continue;
                 }
 
-                // Clear ABOVE the punch point
+                // Clear ABOVE the punch point (preserving special tiles)
                 for dy in 0..clearance_above {
                     let punch_y = y.saturating_sub(dy);
-                    if punch_y < height {
-                        tilemap[punch_y][punch_x] = ' ';
-                    }
+                    clear_tile_if_safe(tilemap, punch_y, punch_x);
                 }
 
-                // Clear BELOW the punch point
+                // Clear BELOW the punch point (preserving special tiles)
                 for dy in 1..=clearance_below {
                     let punch_y = y + dy;
-                    if punch_y < height {
-                        tilemap[punch_y][punch_x] = ' ';
-                    }
+                    clear_tile_if_safe(tilemap, punch_y, punch_x);
                 }
 
                 // Create platforms into segment to ensure traversability
                 // Add platforms at multiple heights to create a path from segment interior to corridor
                 let floor_y = y + 1;
                 if floor_y < height {
-                    // Add main floor platform
-                    if tilemap[floor_y][punch_x] == ' ' {
+                    // Add main floor platform (only if space is empty, not a special tile)
+                    let tile = tilemap[floor_y][punch_x];
+                    if tile == ' ' {
                         tilemap[floor_y][punch_x] = '_';
                     }
                 }
@@ -278,7 +299,7 @@ pub fn punch_through_wall(
             let punch_depth_back = 8; // Into segment interior (increased)
             let clearance = corridor_height + 4;
 
-            // Punch forward (into corridor)
+            // Punch forward (into corridor) - preserving special tiles
             for dy in 0..punch_depth_forward {
                 let punch_y = match direction {
                     LinkDirection::Down => y.saturating_add(dy),
@@ -292,13 +313,11 @@ pub fn punch_through_wall(
 
                 for dx in 0..clearance {
                     let left_x = x.saturating_sub(clearance / 2) + dx;
-                    if left_x < width {
-                        tilemap[punch_y][left_x] = ' ';
-                    }
+                    clear_tile_if_safe(tilemap, punch_y, left_x);
                 }
             }
 
-            // Punch backward (into segment interior)
+            // Punch backward (into segment interior) - preserving special tiles
             for dy in 1..=punch_depth_back {
                 let punch_y = match direction {
                     LinkDirection::Down => y.saturating_sub(dy),
@@ -312,9 +331,7 @@ pub fn punch_through_wall(
 
                 for dx in 0..clearance {
                     let left_x = x.saturating_sub(clearance / 2) + dx;
-                    if left_x < width {
-                        tilemap[punch_y][left_x] = ' ';
-                    }
+                    clear_tile_if_safe(tilemap, punch_y, left_x);
                 }
             }
         }
@@ -361,22 +378,18 @@ pub fn carve_horizontal_corridor(
         let y = (start_y as f32 * (1.0 - t) + end_y as f32 * t) as usize;
 
         // Carve from min_y to the interpolated position plus clearance
-        // This ensures the entire vertical range is passable
+        // This ensures the entire vertical range is passable (preserving special tiles)
         let carve_top = min_y.saturating_sub(corridor_height);
         let carve_bottom = y + 1; // One below the corridor path for floor
 
         for carve_y in carve_top..=carve_bottom.min(height.saturating_sub(1)) {
-            if carve_y < height && tilemap[carve_y][x] != '_' {
-                tilemap[carve_y][x] = ' ';
-            }
+            clear_tile_if_safe(tilemap, carve_y, x);
         }
 
-        // Also clear the main corridor path with standard clearance
+        // Also clear the main corridor path with standard clearance (preserving special tiles)
         for dy in 0..effective_clearance {
             let carve_y = y.saturating_sub(dy);
-            if carve_y < height {
-                tilemap[carve_y][x] = ' ';
-            }
+            clear_tile_if_safe(tilemap, carve_y, x);
         }
     }
 
@@ -394,7 +407,7 @@ pub fn carve_horizontal_corridor(
         };
         let base_y = (start_y as f32 * (1.0 - t) + end_y as f32 * t) as usize;
 
-        // Add platforms along the corridor path
+        // Add platforms along the corridor path (only on empty tiles)
         if i % platform_interval == 1 {
             // Place platform at or slightly above the interpolated position
             let platform_y = if (i / platform_interval) % 2 == 0 {
@@ -403,20 +416,20 @@ pub fn carve_horizontal_corridor(
                 base_y.saturating_sub(2)
             };
 
-            if platform_y < height {
+            if platform_y < height && tilemap[platform_y][x] == ' ' {
                 tilemap[platform_y][x] = '_';
-                if x + 1 < width {
+                if x + 1 < width && tilemap[platform_y][x + 1] == ' ' {
                     tilemap[platform_y][x + 1] = '_';
                 }
             }
         }
 
         // If there's a significant height difference, add extra platforms
-        // to help traverse the vertical distance
+        // to help traverse the vertical distance (only on empty tiles)
         if height_diff > 5 && i % (platform_interval * 2) == 0 {
             // Add intermediate platforms
             let mid_y = (min_y + max_y) / 2;
-            if mid_y < height && mid_y != base_y {
+            if mid_y < height && mid_y != base_y && tilemap[mid_y][x] == ' ' {
                 tilemap[mid_y][x] = '_';
             }
         }
@@ -440,7 +453,7 @@ pub fn carve_vertical_corridor(
     let min_y = start_y.min(end_y);
     let max_y = (start_y.max(end_y) + corridor_len).min(height);
 
-    // Carve main shaft
+    // Carve main shaft (preserving special tiles)
     for y in min_y..max_y {
         if y >= height {
             continue;
@@ -456,13 +469,11 @@ pub fn carve_vertical_corridor(
 
         for dx in 0..corridor_width {
             let cx = shaft_x.saturating_sub(corridor_width / 2) + dx;
-            if cx < width {
-                tilemap[y][cx] = ' ';
-            }
+            clear_tile_if_safe(tilemap, y, cx);
         }
     }
 
-    // Add platforms for climbing every few tiles
+    // Add platforms for climbing every few tiles (only on empty tiles)
     let platform_interval = 4;
     for y in (min_y..max_y).step_by(platform_interval) {
         if y >= height {
@@ -479,9 +490,9 @@ pub fn carve_vertical_corridor(
         // Small platform on alternating sides
         let platform_side = if (y / platform_interval) % 2 == 0 { -2i32 } else { 2 };
         let platform_x = (shaft_x as i32 + platform_side) as usize;
-        if platform_x > 0 && platform_x < width - 1 {
+        if platform_x > 0 && platform_x < width - 1 && tilemap[y][platform_x] == ' ' {
             tilemap[y][platform_x] = '_';
-            if platform_x + 1 < width {
+            if platform_x + 1 < width && tilemap[y][platform_x + 1] == ' ' {
                 tilemap[y][platform_x + 1] = '_';
             }
         }
