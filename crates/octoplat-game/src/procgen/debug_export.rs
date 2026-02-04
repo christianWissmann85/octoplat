@@ -42,7 +42,7 @@ pub fn export_debug_level(
         LayoutStrategy::Linear => "linear",
         LayoutStrategy::Vertical => "vertical",
         LayoutStrategy::Alternating => "alternating",
-        LayoutStrategy::Grid => "grid",
+        LayoutStrategy::Freeform => "freeform",
     };
 
     // Generate filename with timestamp for uniqueness

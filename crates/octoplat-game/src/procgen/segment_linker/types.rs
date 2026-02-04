@@ -12,8 +12,8 @@ pub enum LayoutStrategy {
     Vertical,
     /// Alternating horizontal and vertical: zig-zag pattern
     Alternating,
-    /// 2D grid arrangement with multiple connection directions
-    Grid,
+    /// Freeform snake-like layout with open background (default, most fun!)
+    Freeform,
 }
 
 /// Direction of a connection between segments
@@ -76,7 +76,7 @@ impl Default for SegmentLinkerConfig {
             segment_count: 3,
             corridor_width: 6,
             corridor_height: 5,
-            layout: LayoutStrategy::Linear,
+            layout: LayoutStrategy::Freeform,
         }
     }
 }

@@ -475,7 +475,7 @@ fn test_layout_strategy_variants() {
     let _linear = LayoutStrategy::Linear;
     let _vertical = LayoutStrategy::Vertical;
     let _alternating = LayoutStrategy::Alternating;
-    let _grid = LayoutStrategy::Grid;
+    let _freeform = LayoutStrategy::Freeform;
 }
 
 #[test]
@@ -615,4 +615,118 @@ fn test_linked_generation_abyss() {
     }
 
     assert!(successes > 0, "All Abyss linked generations failed: {:?}", failures);
+}
+
+// =============================================================================
+// Linked Level Review Test (run with: cargo test --test procgen review_linear_level -- --nocapture)
+// =============================================================================
+
+use std::io::Write;
+
+fn generate_level_review(layout: LayoutStrategy, filename: &str) {
+    generate_level_review_with_segments(layout, filename, 3);
+}
+
+fn generate_level_review_with_segments(layout: LayoutStrategy, filename: &str, segment_count: usize) {
+    let mut manager = ProcgenManager::new();
+    manager.load_archetype_pool("/any").unwrap();
+    manager.init_archetype_sequencer(42);
+
+    let seed = 12345u64;
+    let biome = BiomeId::OceanDepths;
+    let preset = DifficultyPreset::Standard;
+
+    let result = manager.generate_linked_level_with_layout_retry(
+        biome,
+        preset,
+        0, // level_index
+        seed,
+        segment_count,
+        layout,
+    );
+
+    // Build output string
+    let mut output = String::new();
+    output.push_str(&format!("{}\n", "=".repeat(80)));
+    output.push_str("LINKED LEVEL REVIEW\n");
+    output.push_str(&format!("{}\n", "=".repeat(80)));
+    output.push_str(&format!("Layout: {:?}\n", layout));
+    output.push_str(&format!("Biome: {:?}\n", biome));
+    output.push_str(&format!("Difficulty: {:?}\n", preset));
+    output.push_str(&format!("Seed: {}\n", seed));
+    output.push_str(&format!("Segment Count: {}\n", segment_count));
+    output.push_str(&format!("{}\n\n", "=".repeat(80)));
+
+    match result {
+        Ok(level) => {
+            output.push_str("Generation successful!\n");
+            output.push_str(&format!("Seed used: {}\n", level.seed));
+            output.push_str(&format!("Decorations: {}\n", level.decorations.len()));
+            output.push_str("\nTILEMAP:\n");
+            output.push_str(&format!("{}\n", "-".repeat(80)));
+
+            // Add tilemap with row numbers for easy reference
+            for (row_idx, line) in level.map_data.lines().enumerate() {
+                output.push_str(&format!("{:3} | {}\n", row_idx, line));
+            }
+
+            output.push_str(&format!("{}\n", "-".repeat(80)));
+            output.push_str("\nLEGEND:\n");
+            output.push_str("  P = Player spawn\n");
+            output.push_str("  > = Exit\n");
+            output.push_str("  # = Solid wall\n");
+            output.push_str("  = = Platform (one-way)\n");
+            output.push_str("  - = Thin platform\n");
+            output.push_str("  ^ = Spike (hazard)\n");
+            output.push_str("  @ = Grapple point\n");
+            output.push_str("  * = Gem/collectible\n");
+            output.push_str("  C = Crab enemy\n");
+            output.push_str("  F = Pufferfish enemy\n");
+            output.push_str("  ! = Crumbling platform\n");
+            output.push_str("  _ = Thin platform\n");
+        }
+        Err(e) => {
+            output.push_str(&format!("Generation FAILED: {:?}\n", e));
+        }
+    }
+
+    output.push_str(&format!("\n{}\n", "=".repeat(80)));
+
+    // Write to file in project root
+    let output_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join(filename);
+
+    let mut file = std::fs::File::create(&output_path).expect("Failed to create output file");
+    file.write_all(output.as_bytes()).expect("Failed to write to file");
+
+    println!("Level saved to: {}", output_path.display());
+}
+
+#[test]
+fn review_linear_level() {
+    generate_level_review(LayoutStrategy::Linear, "generated_level_linear.txt");
+}
+
+#[test]
+fn review_vertical_level() {
+    generate_level_review(LayoutStrategy::Vertical, "generated_level_vertical.txt");
+}
+
+#[test]
+fn review_alternating_level() {
+    generate_level_review(LayoutStrategy::Alternating, "generated_level_alternating.txt");
+}
+
+#[test]
+fn review_freeform_level() {
+    generate_level_review(LayoutStrategy::Freeform, "generated_level_freeform.txt");
+}
+
+#[test]
+fn review_freeform_large_level() {
+    generate_level_review_with_segments(LayoutStrategy::Freeform, "generated_level_freeform_large.txt", 6);
 }

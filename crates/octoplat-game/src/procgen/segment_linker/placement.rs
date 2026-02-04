@@ -190,6 +190,9 @@ fn find_valid_marker_position(
 }
 
 /// Select a layout strategy based on progression and difficulty
+///
+/// Freeform is the primary layout (60%), with other layouts for variety.
+/// As difficulty increases, more complex layouts become available.
 pub fn select_layout_strategy(
     level_index: u32,
     preset: DifficultyPreset,
@@ -210,14 +213,16 @@ pub fn select_layout_strategy(
 
     let roll = rng.next_float();
 
-    if roll < 0.35 {
+    // Freeform is the default (60%), other layouts add variety
+    // Layout distribution: Freeform 60%, Linear 20%, Vertical 10%, Alternating 10%
+    if roll < 0.60 {
+        LayoutStrategy::Freeform
+    } else if roll < 0.80 {
         LayoutStrategy::Linear
-    } else if roll < 0.55 + threshold * 0.1 {
+    } else if roll < 0.90 + threshold * 0.05 {
         LayoutStrategy::Vertical
-    } else if roll < 0.75 + threshold * 0.15 {
-        LayoutStrategy::Alternating
     } else {
-        LayoutStrategy::Grid
+        LayoutStrategy::Alternating
     }
 }
 

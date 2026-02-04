@@ -2,16 +2,17 @@
 //!
 //! This system generates large, varied levels by stitching together
 //! hand-crafted archetype levels as segments. Supports multiple layout
-//! strategies: Linear (horizontal), Vertical (tower), Alternating (zig-zag),
-//! and Grid (2D arrangement).
+//! strategies: Freeform (default, snake-like with open background),
+//! Linear (horizontal), Vertical (tower), and Alternating (zig-zag).
 
 mod corridors;
 mod layout_alternating;
-mod layout_grid;
+mod layout_freeform;
 mod layout_linear;
 mod layout_vertical;
 mod placement;
 mod segment;
+mod trimming;
 mod types;
 
 use octoplat_core::procgen::PooledLevel;
@@ -23,10 +24,11 @@ pub use types::{
 };
 
 use layout_alternating::link_alternating;
-use layout_grid::link_grid;
+use layout_freeform::link_freeform;
 use layout_linear::link_linear;
 use layout_vertical::link_vertical;
 use segment::ParsedSegment;
+use trimming::trim_tilemap_string;
 
 /// Segment linker that combines archetype levels
 pub struct SegmentLinker {
@@ -88,11 +90,22 @@ impl SegmentLinker {
         }
 
         // Create layout based on strategy
-        match self.config.layout {
+        let mut result = match self.config.layout {
             LayoutStrategy::Linear => link_linear(&mut parsed, &self.config),
             LayoutStrategy::Vertical => link_vertical(&mut parsed, &self.config),
             LayoutStrategy::Alternating => link_alternating(&mut parsed, &self.config),
-            LayoutStrategy::Grid => link_grid(&mut parsed, &self.config),
+            LayoutStrategy::Freeform => link_freeform(&mut parsed, &self.config),
+        };
+
+        // Trim unnecessary wall padding from the result
+        // Keep a margin of 1 tile for proper level boundaries
+        if result.success {
+            let (trimmed, new_width, new_height) = trim_tilemap_string(&result.tilemap, 1);
+            result.tilemap = trimmed;
+            result.width = new_width;
+            result.height = new_height;
         }
+
+        result
     }
 }

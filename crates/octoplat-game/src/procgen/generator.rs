@@ -11,7 +11,7 @@ use octoplat_core::Rng;
 use octoplat_core::level::{LevelData, generate_decorations_for_tilemap};
 use octoplat_core::DEFAULT_TILE_SIZE;
 use octoplat_core::state::DifficultyPreset;
-use super::segment_linker::{SegmentLinker, SegmentLinkerConfig, select_segments, select_layout_strategy};
+use super::segment_linker::{LayoutStrategy, SegmentLinker, SegmentLinkerConfig, select_segments, select_layout_strategy};
 use super::debug_export::{export_debug_level, export_debug_segments};
 use super::difficulty::DifficultyParams;
 use super::ProcgenError;
@@ -550,6 +550,148 @@ impl ProcgenManager {
             "[Procgen] All {} attempts exhausted for biome={:?}, preset={:?}",
             MAX_GENERATION_RETRIES, biome, preset
         );
+
+        Err(ProcgenError::RetriesExhausted {
+            attempts: MAX_GENERATION_RETRIES,
+        })
+    }
+
+    /// Generate a linked level with a specific layout strategy (for testing/debugging)
+    pub fn generate_linked_level_with_layout(
+        &mut self,
+        biome: BiomeId,
+        preset: DifficultyPreset,
+        level_index: u32,
+        seed: u64,
+        segment_count: usize,
+        layout: LayoutStrategy,
+    ) -> Result<GeneratedLevel, ProcgenError> {
+        let pool = match &self.archetype_pool {
+            Some(p) if !p.is_empty() => p,
+            _ => return Err(ProcgenError::PoolNotLoaded),
+        };
+
+        let progress = (level_index as f32) / 20.0;
+        let difficulty = DifficultyParams::for_progress(progress.min(1.0), preset);
+
+        let all_levels: Vec<&PooledLevel> = pool.get_all_for_biome(biome);
+        if all_levels.is_empty() {
+            return Err(ProcgenError::NoLevelsForBiome { biome });
+        }
+
+        let segments = select_segments(
+            &all_levels,
+            biome,
+            segment_count,
+            difficulty.min_tier,
+            difficulty.max_tier,
+            seed,
+        );
+
+        if segments.is_empty() {
+            return Err(ProcgenError::SegmentSelectionFailed {
+                biome,
+                min_tier: difficulty.min_tier,
+                max_tier: difficulty.max_tier,
+            });
+        }
+
+        let config = SegmentLinkerConfig {
+            seed,
+            biome,
+            preset,
+            segment_count,
+            corridor_width: 6,
+            corridor_height: 5,
+            layout,
+        };
+
+        let mut linker = SegmentLinker::new(config);
+        let result = linker.link(&segments);
+
+        if !result.success {
+            return Err(ProcgenError::LinkingFailed);
+        }
+
+        let segment_data: Vec<(String, String)> = segments
+            .iter()
+            .map(|s| (s.name.clone(), s.content.clone()))
+            .collect();
+        export_debug_segments(&segment_data, biome, seed);
+
+        export_debug_level(
+            &result.tilemap,
+            biome,
+            preset,
+            layout,
+            &result.segment_names,
+            seed,
+            level_index,
+            result.width,
+            result.height,
+        );
+
+        let scaled_content = self.apply_difficulty_scaling(&result.tilemap, &difficulty, seed);
+
+        let tiles: Vec<Vec<char>> = scaled_content
+            .lines()
+            .map(|line| line.chars().collect())
+            .collect();
+
+        let validation = self.validator.validate_detailed(&tiles);
+
+        if !validation.is_completable {
+            return Err(ProcgenError::ValidationFailed {
+                issues: validation.issues,
+            });
+        }
+
+        let biome_def = biome.definition();
+        let preset_name = match preset {
+            DifficultyPreset::Casual => "Casual",
+            DifficultyPreset::Standard => "Standard",
+            DifficultyPreset::Challenge => "Challenge",
+        };
+
+        #[cfg(debug_assertions)]
+        println!(
+            "Linked level generated: {} segments ({}) in {} ({}x{}) using {:?} layout",
+            result.segment_names.len(),
+            result.segment_names.join(" → "),
+            biome_def.name,
+            result.width,
+            result.height,
+            result.layout
+        );
+
+        let decorations = generate_decorations_for_tilemap(&scaled_content, biome, seed, DEFAULT_TILE_SIZE);
+
+        Ok(GeneratedLevel {
+            map_data: scaled_content,
+            name: format!("{} {} #{}", biome_def.name, preset_name, seed % 10000),
+            seed,
+            decorations,
+        })
+    }
+
+    /// Generate a linked level with specific layout and retry logic
+    pub fn generate_linked_level_with_layout_retry(
+        &mut self,
+        biome: BiomeId,
+        preset: DifficultyPreset,
+        level_index: u32,
+        seed: u64,
+        segment_count: usize,
+        layout: LayoutStrategy,
+    ) -> Result<GeneratedLevel, ProcgenError> {
+        for attempt in 0..MAX_GENERATION_RETRIES {
+            let try_seed = seed.wrapping_add(attempt as u64 * 12345);
+
+            match self.generate_linked_level_with_layout(biome, preset, level_index, try_seed, segment_count, layout) {
+                Ok(level) => return Ok(level),
+                Err(_) => continue,
+            }
+        }
 
         Err(ProcgenError::RetriesExhausted {
             attempts: MAX_GENERATION_RETRIES,
