@@ -231,16 +231,17 @@ pub fn link_freeform(
 
                 let corridor_start_x = from_placement.x + from_seg.width;
                 let corridor_len = to_placement.x.saturating_sub(corridor_start_x);
-                if corridor_len > 0 {
-                    carve_horizontal_corridor(
-                        &mut combined,
-                        corridor_start_x,
-                        exit_y,
-                        corridor_len,
-                        entry_y,
-                        config.corridor_height,
-                    );
-                }
+                // Always carve at least a minimum corridor to ensure connectivity
+                let min_corridor_len = config.corridor_width.max(3);
+                let actual_corridor_len = corridor_len.max(min_corridor_len);
+                carve_horizontal_corridor(
+                    &mut combined,
+                    corridor_start_x,
+                    exit_y,
+                    actual_corridor_len,
+                    entry_y,
+                    config.corridor_height,
+                );
             }
             LinkDirection::Left => {
                 let exit_y = find_entry_row(from_seg, from_placement.y, total_height);
@@ -263,16 +264,17 @@ pub fn link_freeform(
 
                 let corridor_start_x = to_placement.x + to_seg.width;
                 let corridor_len = from_placement.x.saturating_sub(corridor_start_x);
-                if corridor_len > 0 {
-                    carve_horizontal_corridor(
-                        &mut combined,
-                        corridor_start_x,
-                        entry_y,
-                        corridor_len,
-                        exit_y,
-                        config.corridor_height,
-                    );
-                }
+                // Always carve at least a minimum corridor to ensure connectivity
+                let min_corridor_len = config.corridor_width.max(3);
+                let actual_corridor_len = corridor_len.max(min_corridor_len);
+                carve_horizontal_corridor(
+                    &mut combined,
+                    corridor_start_x,
+                    entry_y,
+                    actual_corridor_len,
+                    exit_y,
+                    config.corridor_height,
+                );
             }
             LinkDirection::Down => {
                 let exit_x = find_vertical_exit_col(from_seg, from_placement.x, total_width);
@@ -295,16 +297,17 @@ pub fn link_freeform(
 
                 let corridor_start_y = from_placement.y + from_seg.height;
                 let corridor_len = to_placement.y.saturating_sub(corridor_start_y);
-                if corridor_len > 0 {
-                    carve_vertical_corridor(
-                        &mut combined,
-                        exit_x,
-                        corridor_start_y,
-                        corridor_len,
-                        to_placement.y,
-                        entry_x,
-                    );
-                }
+                // Always carve at least a minimum corridor to ensure connectivity
+                let min_corridor_len = config.corridor_height.max(3);
+                let actual_corridor_len = corridor_len.max(min_corridor_len);
+                carve_vertical_corridor(
+                    &mut combined,
+                    exit_x,
+                    corridor_start_y,
+                    actual_corridor_len,
+                    to_placement.y,
+                    entry_x,
+                );
             }
             LinkDirection::Up => {
                 let exit_x = find_vertical_entry_col(from_seg, from_placement.x, total_width);
@@ -327,16 +330,17 @@ pub fn link_freeform(
 
                 let corridor_start_y = to_placement.y + to_seg.height;
                 let corridor_len = from_placement.y.saturating_sub(corridor_start_y);
-                if corridor_len > 0 {
-                    carve_vertical_corridor(
-                        &mut combined,
-                        entry_x,
-                        corridor_start_y,
-                        corridor_len,
-                        from_placement.y,
-                        exit_x,
-                    );
-                }
+                // Always carve at least a minimum corridor to ensure connectivity
+                let min_corridor_len = config.corridor_height.max(3);
+                let actual_corridor_len = corridor_len.max(min_corridor_len);
+                carve_vertical_corridor(
+                    &mut combined,
+                    entry_x,
+                    corridor_start_y,
+                    actual_corridor_len,
+                    from_placement.y,
+                    exit_x,
+                );
             }
         }
     }
