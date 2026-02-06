@@ -9,7 +9,8 @@
 <p align="center">
   <a href="#features">Features</a> •
   <a href="#screenshot">Screenshot</a> •
-  <a href="#installation">Installation</a> •
+  <a href="#download">Download</a> •
+  <a href="#building-from-source">Build</a> •
   <a href="#controls">Controls</a> •
   <a href="#biomes">Biomes</a> •
   <a href="#architecture">Architecture</a>
@@ -48,7 +49,20 @@
 
 ---
 
-## Installation
+## Download
+
+**Pre-built binaries** are available on the [Releases](https://github.com/christianWissmann85/octoplat/releases) page:
+
+| Platform | Download |
+|:---------|:---------|
+| Windows | `octoplat-windows.exe` |
+| Linux | `octoplat-linux` |
+
+Just download and run — no installation required!
+
+---
+
+## Building from Source
 
 ### Requirements
 
@@ -59,7 +73,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/octoplat.git
+git clone https://github.com/christianWissmann85/octoplat.git
 cd octoplat
 
 # Build and run (release mode recommended)
