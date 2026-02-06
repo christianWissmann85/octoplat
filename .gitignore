@@ -5,6 +5,7 @@ Cargo.lock
 # Debug files
 /debug_levels/
 *.txt
+!assets/roguelite/**/*.txt
 
 # IDE
 .vscode/
