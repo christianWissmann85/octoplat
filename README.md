@@ -7,6 +7,7 @@
 </p>
 
 <p align="center">
+  <a href="#play-online">🎮 Play Online</a> •
   <a href="#features">Features</a> •
   <a href="#screenshot">Screenshot</a> •
   <a href="#download">Download</a> •
@@ -19,9 +20,17 @@
 <p align="center">
   <img src="https://img.shields.io/badge/rust-2021_edition-orange?logo=rust" alt="Rust">
   <img src="https://img.shields.io/badge/macroquad-0.4-blue" alt="macroquad">
-  <img src="https://img.shields.io/badge/platforms-Windows%20|%20Linux%20|%20macOS-lightgrey" alt="Platforms">
+  <img src="https://img.shields.io/badge/platforms-Windows%20|%20Linux%20|%20macOS%20|%20Web-lightgrey" alt="Platforms">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
 </p>
+
+---
+
+## 🎮 Play Online
+
+**[👉 Play Octoplat in your browser right now!](https://christianwissmann85.github.io/octoplat/)**
+
+No download required — instant underwater platforming action! Works on desktop and mobile browsers with WebAssembly support.
 
 ---
 
@@ -43,10 +52,19 @@
   - **Jet Boost** — Propel in any direction; dive downward to smash through breakable blocks
   - **Wall Climb** — Cling and scale walls with stamina-based climbing and wall jumps
   - **Ink Cloud** — Pop a defensive burst for temporary invincibility
-- **Challenging Hazards** — Dodge patrolling crabs, bobbing pufferfish, spikes, and crumbling platforms
-- **Immersive Audio** — Each biome features its own music track and ambient ocean sounds
-- **Gamepad Ready** — Full controller support alongside keyboard controls
+### 🌐 Web Version (Recommended)
 
+**[Play instantly in your browser →](https://christianwissmann85.github.io/octoplat/)**
+
+Cross-platform, no installation needed!
+
+### 💾 Desktop Binaries
+
+**Pre-built binaries** are also available on the [Releases](https://github.com/christianWissmann85/octoplat/releases) page:
+
+| Platform | Download |
+|:---------|:---------|
+| 🌐 Web | **[Play Online](https://christianwissmann85.github.io/octoplat/)** 
 ---
 
 ## Download
@@ -68,6 +86,7 @@ Just download and run — no installation required!
 
 - Rust (2021 edition)
 - Cargo
+- For web builds: `wasm32-unknown-unknown` target
 
 ### Build & Run
 
@@ -80,6 +99,22 @@ cd octoplat
 cargo run --release
 ```
 
+### Build for Web (WASM)
+
+```bash
+# Install WASM target (one-time setup)
+rustup target add wasm32-unknown-unknown
+
+# Build the web version
+./scripts/build-web.sh
+
+# Test locally
+python3 -m http.server 8080 --directory docs
+# Open http://localhost:8080
+```
+
+The web build automatically embeds all assets and optimizes for size.
+
 ### Other Commands
 
 ```bash
@@ -87,12 +122,7 @@ cargo build                  # Debug build
 cargo build --release        # Optimized release build
 cargo test                   # Run all tests
 cargo clippy                 # Lint check
-```
-
-### Cross-compile for Windows
-
-```bash
-./scripts/build-windows.sh
+./scripts/build-windows.sh   # Cross-compile for Windows
 ```
 
 ---

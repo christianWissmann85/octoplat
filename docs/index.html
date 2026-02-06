@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Octoplat - Play Online!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(180deg, #001a33 0%, #003366 50%, #004d7a 100%);
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+
+        #header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        #header p {
+            font-size: 1.2em;
+            color: #a0d8f1;
+        }
+
+        #game-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            border: 3px solid #4db8ff;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            background: #000000;
+            display: block;
+        }
+
+        #loading-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 26, 51, 0.95);
+            padding: 40px;
+            border-radius: 12px;
+            border: 2px solid #4db8ff;
+            z-index: 1000;
+        }
+
+        #loading-screen.hidden {
+            display: none;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #4db8ff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #loading-text {
+            font-size: 1.2em;
+            margin-top: 15px;
+        }
+
+        #progress-bar {
+            width: 300px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px auto;
+        }
+
+        #progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4db8ff, #00e6e6);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        #footer {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #a0d8f1;
+        }
+
+        #footer a {
+            color: #4db8ff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        #footer a:hover {
+            text-decoration: underline;
+        }
+
+        #controls {
+            background: rgba(0, 26, 51, 0.8);
+            padding: 15px 30px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border: 1px solid #4db8ff;
+            max-width: 800px;
+        }
+
+        #controls h3 {
+            color: #4db8ff;
+            margin-bottom: 10px;
+        }
+
+        #controls ul {
+            list-style: none;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+
+        #controls ul li {
+            margin: 5px 0;
+        }
+
+        #controls strong {
+            color: #00e6e6;
+            display: inline-block;
+            min-width: 150px;
+        }
+
+        @media (max-width: 768px) {
+            #header h1 {
+                font-size: 2em;
+            }
+            
+            canvas {
+                max-width: 100vw;
+                max-height: 60vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>🐙 Octoplat 🐙</h1>
+        <p>A Procedurally-Generated Roguelite Platformer</p>
+    </div>
+
+    <div id="game-container">
+        <div id="loading-screen">
+            <div class="spinner"></div>
+            <div id="loading-text">Loading game...</div>
+            <div id="progress-bar">
+                <div id="progress-fill"></div>
+            </div>
+        </div>
+        <canvas id="glcanvas" tabindex="1"></canvas>
+    </div>
+
+    <div id="controls">
+        <h3>🎮 Controls</h3>
+        <ul>
+            <li><strong>WASD / Arrow Keys:</strong> Move and climb</li>
+            <li><strong>Space / Z:</strong> Jump</li>
+            <li><strong>Shift / X:</strong> Jet Boost (any direction)</li>
+            <li><strong>E / C:</strong> Ink Cloud (defensive)</li>
+            <li><strong>Escape:</strong> Pause / Menu</li>
+            <li><strong>Gamepad:</strong> Full controller support!</li>
+        </ul>
+    </div>
+
+    <div id="footer">
+        <p>
+            Built with Rust 🦀 + macroquad • 
+            <a href="https://github.com/christianWissmann85/octoplat" target="_blank">View on GitHub</a>
+        </p>
+        <p style="margin-top: 10px; font-size: 0.85em;">
+            Dive through coral reefs, scale shipwrecks, and ink-cloud past dangers!
+        </p>
+    </div>
+
+    <script src="./gl.js"></script>
+    <script>
+        const canvas = document.getElementById("glcanvas");
+        const loadingScreen = document.getElementById("loading-screen");
+        const loadingText = document.getElementById("loading-text");
+        const progressFill = document.getElementById("progress-fill");
+
+        // Loading progress simulation
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress > 90) progress = 90;
+            progressFill.style.width = progress + "%";
+        }, 200);
+
+        // Load and run the WASM module
+        load("./octoplat.wasm").then(() => {
+            clearInterval(progressInterval);
+            progressFill.style.width = "100%";
+            loadingText.textContent = "Ready! 🎮";
+            
+            setTimeout(() => {
+                loadingScreen.classList.add("hidden");
+            }, 500);
+        }).catch((err) => {
+            clearInterval(progressInterval);
+            loadingText.textContent = "Failed to load game ❌";
+            console.error("Error loading WASM:", err);
+        });
+
+        // Prevent scrolling with arrow keys
+        window.addEventListener("keydown", function(e) {
+            if(["Space","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].indexOf(e.code) > -1) {
+                e.preventDefault();
+            }
+        }, false);
+
+        // Focus canvas on click
+        canvas.addEventListener("click", () => {
+            canvas.focus();
+        });
+    </script>
+</body>
+</html>
