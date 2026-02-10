@@ -49,16 +49,19 @@ jobs:
       run: |
         echo "Building Octoplat for WebAssembly..."
         cargo build --release --target wasm32-unknown-unknown
-        
+
         # Create docs directory if it doesn't exist
         mkdir -p docs
-        
+
         # Copy WASM binary
         cp target/wasm32-unknown-unknown/release/octoplat.wasm docs/
-        
+
         # Download macroquad JS loader
         curl -L https://raw.githubusercontent.com/not-fl3/macroquad/master/js/mq_js_bundle.js -o docs/gl.js
-        
+
+        # Remove .gitignore so deployment includes all build artifacts
+        rm -f docs/.gitignore
+
         # Show file sizes for logging
         echo "📦 WASM binary size:"
         du -h docs/octoplat.wasm
