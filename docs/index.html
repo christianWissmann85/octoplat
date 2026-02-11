@@ -17,8 +17,8 @@
             z-index: 0;
         }
 
-        /* Pre-game loading overlay - will be hidden once WASM starts */
-        #loading-overlay {
+        /* Start screen - requires click to unlock audio */
+        #start-screen {
             position: fixed;
             top: 0;
             left: 0;
@@ -29,10 +29,90 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            z-index: 2000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+            cursor: pointer;
+        }
+
+        #start-screen.hidden {
+            display: none;
+        }
+
+        #start-screen h1 {
+            font-size: 4em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        #start-screen .subtitle {
+            font-size: 1.3em;
+            color: #a0d8f1;
+            margin-bottom: 50px;
+        }
+
+        #start-button {
+            background: linear-gradient(180deg, #4db8ff 0%, #0088cc 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 20px 60px;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 136, 204, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #start-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 136, 204, 0.6);
+        }
+
+        #start-button:active {
+            transform: scale(0.98);
+        }
+
+        .click-hint {
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #6699bb;
+        }
+
+        .controls-preview {
+            margin-top: 40px;
+            background: rgba(0, 26, 51, 0.6);
+            padding: 20px 40px;
+            border-radius: 10px;
+            border: 1px solid #4db8ff33;
+            font-size: 0.9em;
+            color: #a0d8f1;
+        }
+
+        .controls-preview strong {
+            color: #4db8ff;
+        }
+
+        /* Loading overlay - shown while WASM loads */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #001a33 0%, #003366 50%, #004d7a 100%);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             z-index: 1000;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #ffffff;
             transition: opacity 0.5s ease;
+        }
+
+        #loading-overlay.active {
+            display: flex;
         }
 
         #loading-overlay.hidden {
@@ -74,12 +154,23 @@
     </style>
 </head>
 <body>
-    <!-- Pre-game loading overlay -->
+    <!-- Start screen - click to begin (unlocks audio) -->
+    <div id="start-screen">
+        <h1>Octoplat</h1>
+        <p class="subtitle">A Procedurally-Generated Roguelite Platformer</p>
+        <button id="start-button">Play Game</button>
+        <p class="click-hint">Click to start and enable audio</p>
+        <div class="controls-preview">
+            <strong>Controls:</strong> WASD/Arrows to move | Space to jump | Shift for jet boost | E for ink cloud
+        </div>
+    </div>
+
+    <!-- Loading overlay - shown while WASM loads -->
     <div id="loading-overlay">
         <h1>Octoplat</h1>
-        <p>A Procedurally-Generated Roguelite Platformer</p>
+        <p>Loading game...</p>
         <div class="spinner"></div>
-        <div id="loading-text">Loading WebAssembly...</div>
+        <div id="loading-text">Initializing WebAssembly...</div>
     </div>
 
     <!-- Game canvas - macroquad will render here -->
@@ -88,33 +179,59 @@
     <!-- macroquad JS loader -->
     <script src="./mq_js_bundle.js"></script>
     <script>
-        // Hide the loading overlay once the canvas starts rendering
-        // The game has its own loading screen in Rust, so we just need to hide this
+        var startScreen = document.getElementById('start-screen');
         var loadingOverlay = document.getElementById('loading-overlay');
         var loadingText = document.getElementById('loading-text');
-        var checkInterval;
+        var startButton = document.getElementById('start-button');
+        var gameCanvas = document.getElementById('glcanvas');
+        var gameStarted = false;
 
-        // Start loading the WASM
-        loadingText.textContent = 'Initializing game...';
+        function startGame() {
+            if (gameStarted) return;
+            gameStarted = true;
 
-        // Check periodically if the game has started rendering
-        checkInterval = setInterval(function() {
-            var gameCanvas = document.getElementById('glcanvas');
-            // Once the canvas has content or dimensions change, the game is running
-            if (gameCanvas.width > 0 && gameCanvas.height > 0) {
+            // Hide start screen, show loading
+            startScreen.classList.add('hidden');
+            loadingOverlay.classList.add('active');
+
+            // Focus canvas for input
+            gameCanvas.focus();
+
+            // Load the WASM module
+            loadingText.textContent = 'Loading game assets...';
+            load("./octoplat.wasm");
+
+            // Check periodically if the game has started rendering
+            var checkInterval = setInterval(function() {
+                if (gameCanvas.width > 0 && gameCanvas.height > 0) {
+                    clearInterval(checkInterval);
+                    loadingOverlay.classList.add('hidden');
+                }
+            }, 100);
+
+            // Fallback: hide loading after 8 seconds
+            setTimeout(function() {
                 clearInterval(checkInterval);
                 loadingOverlay.classList.add('hidden');
+            }, 8000);
+        }
+
+        // Start on button click
+        startButton.addEventListener('click', startGame);
+
+        // Also start on any key press
+        document.addEventListener('keydown', function(e) {
+            if (!gameStarted) {
+                startGame();
             }
-        }, 100);
+        }, { once: true });
 
-        // Fallback: hide after 5 seconds regardless
-        setTimeout(function() {
-            clearInterval(checkInterval);
-            loadingOverlay.classList.add('hidden');
-        }, 5000);
-
-        // Load the WASM module
-        load("./octoplat.wasm");
+        // Prevent arrow keys from scrolling
+        window.addEventListener('keydown', function(e) {
+            if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].indexOf(e.code) > -1) {
+                e.preventDefault();
+            }
+        }, false);
     </script>
 </body>
 </html>

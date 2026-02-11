@@ -393,64 +393,74 @@ async fn main() {
     // Show initial loading screen with a few frames of animation
     animate_loading(10, 0.0, "Initializing...", Some(&game.level.ui_textures)).await;
 
-    // Initialize audio system with graceful failure handling
-    // Set a custom panic hook to suppress ALSA errors on systems without audio (e.g., WSL)
-    let default_hook = std::panic::take_hook();
-    std::panic::set_hook(Box::new(|panic_info| {
-        let msg = panic_info.to_string();
-        // Only suppress audio-related panics, let others through
-        if msg.contains("PCM") || msg.contains("ALSA") || msg.contains("audio") {
-            eprintln!("Note: Audio device not available - sound disabled");
-        } else {
-            // Use default behavior for other panics
-            eprintln!("{}", panic_info);
+    // Audio is disabled on web (WASM) due to compatibility issues with macroquad's audio system
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        // Initialize audio system with graceful failure handling
+        // Set a custom panic hook to suppress ALSA errors on systems without audio (e.g., WSL)
+        let default_hook = std::panic::take_hook();
+        std::panic::set_hook(Box::new(|panic_info| {
+            let msg = panic_info.to_string();
+            // Only suppress audio-related panics, let others through
+            if msg.contains("PCM") || msg.contains("ALSA") || msg.contains("audio") {
+                eprintln!("Note: Audio device not available - sound disabled");
+            } else {
+                // Use default behavior for other panics
+                eprintln!("{}", panic_info);
+            }
+        }));
+
+        animate_loading(8, 0.1, "Loading sound effects...", Some(&game.level.ui_textures)).await;
+        game.fx.audio = Some(AudioManager::new().await);
+        animate_loading(3, 0.25, "Loading sound effects...", Some(&game.level.ui_textures)).await;
+
+        // Restore default panic hook
+        std::panic::set_hook(default_hook);
+
+        // Initialize music system - load tracks one at a time with progress updates
+        animate_loading(8, 0.3, "Loading music...", Some(&game.level.ui_textures)).await;
+        let mut music_manager = MusicManager::new();
+
+        // Load music tracks with progress feedback
+        let music_tracks = [
+            (MusicTrack::Title, "Loading title music..."),
+            (MusicTrack::GameOver, "Loading game over music..."),
+            (MusicTrack::OceanDepths, "Loading Ocean Depths..."),
+            (MusicTrack::CoralReefs, "Loading Coral Reefs..."),
+            (MusicTrack::TropicalShore, "Loading Tropical Shore..."),
+            (MusicTrack::Shipwreck, "Loading Shipwreck..."),
+            (MusicTrack::ArcticWaters, "Loading Arctic Waters..."),
+            (MusicTrack::VolcanicVents, "Loading Volcanic Vents..."),
+            (MusicTrack::SunkenRuins, "Loading Sunken Ruins..."),
+            (MusicTrack::Abyss, "Loading The Abyss..."),
+        ];
+
+        for (i, (track, msg)) in music_tracks.iter().enumerate() {
+            let progress = 0.3 + (i as f32 / music_tracks.len() as f32) * 0.5;
+            // Render animation frames before and after each track load
+            animate_loading(8, progress, msg, Some(&game.level.ui_textures)).await;
+            music_manager.load_track(*track).await;
+            // Brief animation after load completes
+            animate_loading(2, progress + 0.05, msg, Some(&game.level.ui_textures)).await;
         }
-    }));
 
-    animate_loading(8, 0.1, "Loading sound effects...", Some(&game.level.ui_textures)).await;
-    game.fx.audio = Some(AudioManager::new().await);
-    animate_loading(3, 0.25, "Loading sound effects...", Some(&game.level.ui_textures)).await;
+        music_manager.set_volume(game.progression.save_manager.data.music_volume);
+        game.fx.set_music(music_manager);
 
-    // Restore default panic hook
-    std::panic::set_hook(default_hook);
-
-    // Initialize music system - load tracks one at a time with progress updates
-    animate_loading(8, 0.3, "Loading music...", Some(&game.level.ui_textures)).await;
-    let mut music_manager = MusicManager::new();
-
-    // Load music tracks with progress feedback
-    let music_tracks = [
-        (MusicTrack::Title, "Loading title music..."),
-        (MusicTrack::GameOver, "Loading game over music..."),
-        (MusicTrack::OceanDepths, "Loading Ocean Depths..."),
-        (MusicTrack::CoralReefs, "Loading Coral Reefs..."),
-        (MusicTrack::TropicalShore, "Loading Tropical Shore..."),
-        (MusicTrack::Shipwreck, "Loading Shipwreck..."),
-        (MusicTrack::ArcticWaters, "Loading Arctic Waters..."),
-        (MusicTrack::VolcanicVents, "Loading Volcanic Vents..."),
-        (MusicTrack::SunkenRuins, "Loading Sunken Ruins..."),
-        (MusicTrack::Abyss, "Loading The Abyss..."),
-    ];
-
-    for (i, (track, msg)) in music_tracks.iter().enumerate() {
-        let progress = 0.3 + (i as f32 / music_tracks.len() as f32) * 0.5;
-        // Render animation frames before and after each track load
-        animate_loading(8, progress, msg, Some(&game.level.ui_textures)).await;
-        music_manager.load_track(*track).await;
-        // Brief animation after load completes
-        animate_loading(2, progress + 0.05, msg, Some(&game.level.ui_textures)).await;
+        // Initialize ambient sound system
+        animate_loading(8, 0.82, "Loading ambient sounds...", Some(&game.level.ui_textures)).await;
+        let mut ambient_manager = AmbientManager::new();
+        ambient_manager.load_all().await;
+        ambient_manager.set_volume(0.4); // Slightly quieter than music
+        game.fx.set_ambient(ambient_manager);
+        animate_loading(3, 0.85, "Loading ambient sounds...", Some(&game.level.ui_textures)).await;
     }
 
-    music_manager.set_volume(game.progression.save_manager.data.music_volume);
-    game.fx.set_music(music_manager);
-
-    // Initialize ambient sound system
-    animate_loading(8, 0.82, "Loading ambient sounds...", Some(&game.level.ui_textures)).await;
-    let mut ambient_manager = AmbientManager::new();
-    ambient_manager.load_all().await;
-    ambient_manager.set_volume(0.4); // Slightly quieter than music
-    game.fx.set_ambient(ambient_manager);
-    animate_loading(3, 0.85, "Loading ambient sounds...", Some(&game.level.ui_textures)).await;
+    // On web, skip audio loading entirely (faster startup, no broken audio)
+    #[cfg(target_arch = "wasm32")]
+    {
+        animate_loading(5, 0.5, "Skipping audio (web)...", Some(&game.level.ui_textures)).await;
+    }
 
     // Load background textures for all biomes
     animate_loading(5, 0.85, "Loading backgrounds...", Some(&game.level.ui_textures)).await;
@@ -467,17 +477,21 @@ async fn main() {
     game.level.tile_textures.load_all_biomes().await;
     animate_loading(2, 0.96, "Loading tile textures...", Some(&game.level.ui_textures)).await;
 
-    // Apply saved audio settings
-    animate_loading(3, 0.98, "Applying settings...", Some(&game.level.ui_textures)).await;
-    if let Some(ref audio) = game.fx.audio {
-        audio.set_sfx_volume(game.progression.save_manager.data.sfx_volume);
-        audio.set_music_volume(game.progression.save_manager.data.music_volume);
+    // Apply saved audio settings (native only)
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        animate_loading(3, 0.98, "Applying settings...", Some(&game.level.ui_textures)).await;
+        if let Some(ref audio) = game.fx.audio {
+            audio.set_sfx_volume(game.progression.save_manager.data.sfx_volume);
+            audio.set_music_volume(game.progression.save_manager.data.music_volume);
+        }
     }
 
     // Final loading frame - show "Ready!" briefly
     animate_loading(15, 1.0, "Ready!", Some(&game.level.ui_textures)).await;
 
-    // Start title music
+    // Start title music (native only - audio disabled on web)
+    #[cfg(not(target_arch = "wasm32"))]
     game.fx.play_music(MusicTrack::Title);
 
     loop {
