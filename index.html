@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Octoplat - Play Online!</title>
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGYSURBVFhH7ZY9TsMwGIYdseEOLOwsrEgdkJA4AQMjO0dgYmVhZOQIHIGRlYWRgYmBAbGxcAfEy/eVbMd2nDQVEhJPYjV2/H6/+yexG4/HE/+JpmkaY9lLsVisl+BarcayLMtCJ7PZLC2Xy7per+N6vc6y2+0YNgLwPb/xeExyD4VCISmVSkmxWEyKxSJrtVpJ5vDwMC4UCnG+UI/lctnjcrkcc9rtdpLD4YiLxWKcy+WYYzabJfl8Ps7n83E2m40zmUycyWTiTCZDM5lMnE6nY7vdHqdSqTiZTMbJZJImEok4Ho/H0Wg0jkQicTgcjkOhUBwMBuNAIBD7/f7Y5/PFXq839ng8sdvtjl0uV+x0OmOHwxHb7fbYZrPFVqs1tlgsscViiQEAAwBjNpvNeTabzSYzgCAIAowmGJPJFBuNxthgMMR6vT7W6XSxVquNNRpNrFarY5VKFSuVylihUMRyuTyWyWSxVCqNJRJJLBaLYxAEYxAEGaPRGKMojFarDdVqdajT6UKtVhtqNJpQrVaHKpUqVCgUoVwuDwH4wz+hVPoEKo+05w38xHAAAAAASUVORK5CYII=">
+    <style>
+        html, body, canvas {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            position: absolute;
+            background: black;
+            z-index: 0;
+        }
+
+        /* Start screen - requires click to unlock audio */
+        #start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #001a33 0%, #003366 50%, #004d7a 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+            cursor: pointer;
+        }
+
+        #start-screen.hidden {
+            display: none;
+        }
+
+        #start-screen h1 {
+            font-size: 4em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        #start-screen .subtitle {
+            font-size: 1.3em;
+            color: #a0d8f1;
+            margin-bottom: 50px;
+        }
+
+        #start-button {
+            background: linear-gradient(180deg, #4db8ff 0%, #0088cc 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 20px 60px;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 136, 204, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #start-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 136, 204, 0.6);
+        }
+
+        #start-button:active {
+            transform: scale(0.98);
+        }
+
+        .click-hint {
+            margin-top: 30px;
+            font-size: 0.9em;
+            color: #6699bb;
+        }
+
+        .controls-preview {
+            margin-top: 40px;
+            background: rgba(0, 26, 51, 0.6);
+            padding: 20px 40px;
+            border-radius: 10px;
+            border: 1px solid #4db8ff33;
+            font-size: 0.9em;
+            color: #a0d8f1;
+        }
+
+        .controls-preview strong {
+            color: #4db8ff;
+        }
+
+        /* Loading overlay - shown while WASM loads */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, #001a33 0%, #003366 50%, #004d7a 100%);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+            transition: opacity 0.5s ease;
+        }
+
+        #loading-overlay.active {
+            display: flex;
+        }
+
+        #loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #loading-overlay h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        #loading-overlay p {
+            font-size: 1.2em;
+            color: #a0d8f1;
+            margin-bottom: 30px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #4db8ff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        #loading-text {
+            font-size: 1.1em;
+            color: #4db8ff;
+        }
+    </style>
+</head>
+<body>
+    <!-- Start screen - click to begin (unlocks audio) -->
+    <div id="start-screen">
+        <h1>Octoplat</h1>
+        <p class="subtitle">A Procedurally-Generated Roguelite Platformer</p>
+        <button id="start-button">Play Game</button>
+        <p class="click-hint">Click to start and enable audio</p>
+        <div class="controls-preview">
+            <strong>Controls:</strong> WASD/Arrows to move | Space to jump | Shift for jet boost | E for ink cloud
+        </div>
+    </div>
+
+    <!-- Loading overlay - shown while WASM loads -->
+    <div id="loading-overlay">
+        <h1>Octoplat</h1>
+        <p>Loading game...</p>
+        <div class="spinner"></div>
+        <div id="loading-text">Initializing WebAssembly...</div>
+    </div>
+
+    <!-- Game canvas - macroquad will render here -->
+    <canvas id="glcanvas" tabindex="1"></canvas>
+
+    <!-- macroquad JS loader -->
+    <script src="./mq_js_bundle.js"></script>
+    <script>
+        var startScreen = document.getElementById('start-screen');
+        var loadingOverlay = document.getElementById('loading-overlay');
+        var loadingText = document.getElementById('loading-text');
+        var startButton = document.getElementById('start-button');
+        var gameCanvas = document.getElementById('glcanvas');
+        var gameStarted = false;
+
+        function startGame() {
+            if (gameStarted) return;
+            gameStarted = true;
+
+            // Hide start screen, show loading
+            startScreen.classList.add('hidden');
+            loadingOverlay.classList.add('active');
+
+            // Focus canvas for input
+            gameCanvas.focus();
+
+            // Load the WASM module
+            loadingText.textContent = 'Loading game assets...';
+            load("./octoplat.wasm");
+
+            // Check periodically if the game has started rendering
+            var checkInterval = setInterval(function() {
+                if (gameCanvas.width > 0 && gameCanvas.height > 0) {
+                    clearInterval(checkInterval);
+                    loadingOverlay.classList.add('hidden');
+                }
+            }, 100);
+
+            // Fallback: hide loading after 8 seconds
+            setTimeout(function() {
+                clearInterval(checkInterval);
+                loadingOverlay.classList.add('hidden');
+            }, 8000);
+        }
+
+        // Start on button click
+        startButton.addEventListener('click', startGame);
+
+        // Also start on any key press
+        document.addEventListener('keydown', function(e) {
+            if (!gameStarted) {
+                startGame();
+            }
+        }, { once: true });
+
+        // Prevent arrow keys from scrolling
+        window.addEventListener('keydown', function(e) {
+            if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].indexOf(e.code) > -1) {
+                e.preventDefault();
+            }
+        }, false);
+    </script>
+</body>
+</html>
