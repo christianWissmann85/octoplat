@@ -56,8 +56,8 @@ jobs:
         # Copy WASM binary
         cp target/wasm32-unknown-unknown/release/octoplat.wasm docs/
 
-        # Download macroquad JS loader
-        curl -L https://raw.githubusercontent.com/not-fl3/macroquad/master/js/mq_js_bundle.js -o docs/gl.js
+        # Download macroquad JS loader (using the official hosted version)
+        curl -L https://not-fl3.github.io/miniquad-samples/mq_js_bundle.js -o docs/mq_js_bundle.js
 
         # Remove .gitignore so deployment includes all build artifacts
         rm -f docs/.gitignore

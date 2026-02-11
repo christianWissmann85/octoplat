@@ -15,7 +15,10 @@ winres = "0.1"
 [dependencies]
 octoplat-core = { path = "../octoplat-core" }
 macroquad = { version = "0.4", features = ["audio"] }
-gamepads = "0.1"
 serde = { workspace = true }
 serde_json = { workspace = true }
 rust-embed = "8.0"
+
+# Gamepad support - only for native builds (gamepads crate uses wasm-bindgen which conflicts with macroquad's WASM approach)
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+gamepads = "0.1"
